@@ -703,6 +703,16 @@ async function persist(){
   }
   updateSaveBanner();
 }
+// Быстрое сохранение для частых изменений полей.
+// Интерфейс не ждёт хранилище: несколько быстрых кликов объединяются в одну запись.
+let persistDebounceTimer = null;
+function schedulePersist(delay=220){
+  if(persistDebounceTimer) clearTimeout(persistDebounceTimer);
+  persistDebounceTimer = setTimeout(()=>{
+    persistDebounceTimer = null;
+    persist();
+  }, delay);
+}
 function updateSaveBanner(){
   const el = document.getElementById('saveBanner');
   if(!el) return;
@@ -1175,23 +1185,25 @@ async function toggleRead(storyId, checked){
   const r = ensureRatings(currentPersonId, storyId);
   r.read = checked;
   if(checked) r.inProgress = false;
-  await persist();
-  render();
+  renderList();
+  renderStats();
+  schedulePersist();
 }
 async function toggleInProgress(storyId, checked){
   if(!canEdit()) return;
   const r = ensureRatings(currentPersonId, storyId);
   r.inProgress = checked;
   if(checked) r.read = false;
-  await persist();
-  render();
+  renderList();
+  renderStats();
+  schedulePersist();
 }
 async function updateCrit(storyId, key, field, val){
   if(!canEdit()) return;
   const r = ensureRatings(currentPersonId, storyId);
   r.crit[key][field] = val;
-  await persist();
-  render();
+  renderList();
+  schedulePersist();
 }
 async function updateExtraFavoriteCrit(storyId, criterionId, field, val){
   if(!canEdit()) return;
@@ -1200,8 +1212,8 @@ async function updateExtraFavoriteCrit(storyId, criterionId, field, val){
   const r = ensureRatings(currentPersonId, storyId);
   ensureExtraFavoriteRatings(r, story);
   r.crit[criterionId][field] = val;
-  await persist();
-  render();
+  renderList();
+  schedulePersist();
 }
 async function toggleExtraFavoriteName(storyId, criterionId, val){
   if(!canEdit()) return;
@@ -1213,8 +1225,8 @@ async function toggleExtraFavoriteName(storyId, criterionId, val){
   const current = extraFavoriteNamesOf(entry);
   const next = current.includes(val) ? current.filter(n=>n!==val) : [...current, val];
   setExtraFavoriteNames(entry, next);
-  await persist();
   renderList();
+  schedulePersist();
 }
 async function addExtraFavoriteCriterion(storyId){
   if(!isCurrentAdmin()) return;
@@ -1248,8 +1260,8 @@ async function toggleFavName(storyId, val){
     const next = current.includes(val) ? current.filter(n=>n!==val) : [...current, val];
     setFavoriteNames(r, next);
   }
-  await persist();
   renderList();
+  schedulePersist();
 }
 
 async function toggleEmotion(storyId, tag){
@@ -1257,14 +1269,14 @@ async function toggleEmotion(storyId, tag){
   const r = ensureRatings(currentPersonId, storyId);
   const idx = r.crit.emotions.indexOf(tag);
   if(idx>-1) r.crit.emotions.splice(idx,1); else r.crit.emotions.push(tag);
-  await persist();
-  render();
+  renderList();
+  schedulePersist();
 }
 async function updateNotes(storyId, val){
   if(!canEdit()) return;
   const r = ensureRatings(currentPersonId, storyId);
   r.notes = val;
-  await persist();
+  schedulePersist();
 }
 
 /* ---------- rendering ---------- */
