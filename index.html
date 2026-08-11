@@ -618,7 +618,24 @@ async function load(){
     });
     Object.values(data.ratings||{}).forEach(personRatings=>{
       Object.values(personRatings||{}).forEach(r=>{
-        if(!r || !r.crit || !r.crit.favorite) return;
+        if(!r || !r.crit) return;
+
+        // Очищаем уже сохранённые эмоциональные отклики: оставляем только
+        // варианты из текущего списка EMOTION_TAGS. Старые/лишние теги
+        // (например, «Любопытство», «Ностальгия», «Стыд», «Обида»)
+        // удаляются из существующих оценок, но больше ничего в оценке не меняется.
+        if(!Array.isArray(r.crit.emotions)){
+          r.crit.emotions = [];
+          migrated = true;
+        } else {
+          const cleanedEmotions = r.crit.emotions.filter(tag=>EMOTION_TAGS.includes(tag));
+          if(cleanedEmotions.length !== r.crit.emotions.length){
+            r.crit.emotions = cleanedEmotions;
+            migrated = true;
+          }
+        }
+
+        if(!r.crit.favorite) return;
         const names = favoriteNamesOf(r);
         if(!Array.isArray(r.crit.favorite.names) || r.crit.favorite.name !== (names[0]||'')){
           setFavoriteNames(r, names); migrated = true;
