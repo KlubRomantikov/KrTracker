@@ -478,6 +478,19 @@ async function load(){
 
     if(migrated) await persist();
   }
+  // Приводим порядок историй к каноническому списку (новые/незнакомые уходят в конец, порядок между собой сохраняется).
+  {
+    const orderIndex = {};
+    STORY_ORDER.forEach(([t], i)=>{ orderIndex[t] = i; });
+    const sorted = data.stories.map((s, i)=>({ s, i })).sort((a, b)=>{
+      const ia = orderIndex.hasOwnProperty(a.s.title) ? orderIndex[a.s.title] : (STORY_ORDER.length + a.i);
+      const ib = orderIndex.hasOwnProperty(b.s.title) ? orderIndex[b.s.title] : (STORY_ORDER.length + b.i);
+      return ia - ib;
+    }).map(x=>x.s);
+    const changedOrder = sorted.some((s, i)=> s !== data.stories[i]);
+    data.stories = sorted;
+    if(changedOrder) await persist();
+  }
   try{
     const sel = localStorage.getItem('kr_selected_person');
     if(sel) currentPersonId = sel;
@@ -927,7 +940,7 @@ document.getElementById('unlockBtn').addEventListener('click', async ()=>{
 document.getElementById('addOne').addEventListener('click', async ()=>{
   if(!isCurrentAdmin()) return;
   const s = { id: uid('s'), title:'Новая история', author:'', status:'done', favoriteNames: [] };
-  data.stories.unshift(s);
+  data.stories.push(s);
   openId = s.id;
   filterMode='all'; authorFilterVal='';
   await persist();
