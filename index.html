@@ -192,6 +192,11 @@
   .del-btn{background:none;border:none;color:var(--rose);font-family:'Manrope',sans-serif;font-size:10.5px;cursor:pointer;text-decoration:underline;text-underline-offset:2px;}
 
   .empty-state{text-align:center;padding:36px 20px;color:var(--text-dim);font-style:italic;font-size:13.5px;}
+
+.admin-sortable-story{position:relative;touch-action:pan-y;user-select:none;}
+.admin-sortable-story.longpress-drag{opacity:.62;transform:scale(.985);box-shadow:0 10px 28px rgba(0,0,0,.18);z-index:20;}
+.admin-sortable-story::after{content:'↕';position:absolute;right:12px;top:12px;font-size:13px;color:var(--text-dim);opacity:.45;pointer-events:none;}
+.admin-sortable-story.longpress-drag::after{content:'↕';opacity:.9;}
 </style>
 </head>
 <body>
@@ -1672,7 +1677,7 @@ function renderAdmin(){
         </div>`;
     }).join('') || `<div class="compare-empty">Пока никто не оставил мнение об этой истории</div>`;
     return `
-      <div class="story ${isOpen?'open':''}">
+      <div class="story admin-sortable-story ${isOpen?'open':''}" data-story-id="${s.id}">
         <div class="story-head" style="--status-color:${s.status==='done'?'var(--gold)':'var(--mint)'};cursor:pointer;" onclick="toggleRatingStory('${s.id}')">
           <div style="font-family:'Marcellus',serif;color:var(--text-dim);font-size:15px;width:22px;flex:0 0 auto;text-align:center;">${i+1}</div>
           <div class="story-main">
@@ -1694,6 +1699,62 @@ function renderAdmin(){
         </div>
       </div>`;
   }).join('');
+  setupAdminStoryReorder();
+}
+
+let adminDragState = {id:null, timer:null, dragging:false, suppressClick:false, moved:false};
+function setupAdminStoryReorder(){
+  const list = document.getElementById('adminList');
+  if(!list || !canEdit()) return;
+  const cards = [...list.querySelectorAll('.admin-sortable-story')];
+  cards.forEach(card=>{
+    card.addEventListener('pointerdown', e=>{
+      if(e.button!==undefined && e.button!==0) return;
+      clearTimeout(adminDragState.timer);
+      adminDragState.id=card.dataset.storyId;
+      adminDragState.dragging=false;
+      adminDragState.suppressClick=false;
+      adminDragState.moved=false;
+      adminDragState.timer=setTimeout(()=>{
+        adminDragState.dragging=true;
+        card.classList.add('longpress-drag');
+        try{ card.setPointerCapture(e.pointerId); }catch(_){ }
+      },420);
+    });
+    card.addEventListener('pointermove', e=>{
+      if(!adminDragState.dragging || adminDragState.id!==card.dataset.storyId) return;
+      const under=document.elementFromPoint(e.clientX,e.clientY)?.closest('.admin-sortable-story');
+      if(!under || under===card || !list.contains(under)) return;
+      const all=[...list.querySelectorAll('.admin-sortable-story')];
+      const from=all.indexOf(card), to=all.indexOf(under);
+      if(from<0 || to<0 || from===to) return;
+      if(from<to) under.after(card); else under.before(card);
+      adminDragState.moved=true;
+      adminDragState.suppressClick=true;
+    });
+    const finish=async()=>{
+      clearTimeout(adminDragState.timer);
+      if(!adminDragState.dragging){ adminDragState.id=null; return; }
+      adminDragState.dragging=false;
+      card.classList.remove('longpress-drag');
+      if(adminDragState.moved){
+        const order=[...list.querySelectorAll('.admin-sortable-story')].map(el=>el.dataset.storyId);
+        const byId=new Map(data.stories.map(st=>[st.id,st]));
+        data.stories=order.map(id=>byId.get(id)).filter(Boolean);
+        await persist();
+        renderAdmin();
+      }
+      adminDragState.id=null;
+      adminDragState.moved=false;
+      adminDragState.suppressClick=true;
+    };
+    card.addEventListener('pointerup', finish);
+    card.addEventListener('pointercancel', finish);
+    card.addEventListener('pointerleave', ()=>{ if(!adminDragState.dragging) clearTimeout(adminDragState.timer); });
+    card.addEventListener('click', e=>{
+      if(adminDragState.suppressClick){ e.preventDefault(); e.stopPropagation(); adminDragState.suppressClick=false; }
+    }, true);
+  });
 }
 
 function toggleRatingStory(id){
