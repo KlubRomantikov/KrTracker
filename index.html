@@ -71,10 +71,10 @@
   .compare-fav{color:var(--rose);}
   .compare-none{font-size:10.5px;color:var(--text-dim);font-style:italic;}
   .compare-empty{font-size:11.5px;color:var(--text-dim);font-style:italic;}
-  .char-gallery{display:flex;flex-wrap:wrap;gap:10px;margin-top:8px;}
-  .char-item{display:flex;flex-direction:column;align-items:center;gap:4px;width:56px;cursor:pointer;position:relative;flex:0 0 auto;}
+  .char-gallery{display:flex;flex-wrap:wrap;gap:7px 5px;margin-top:8px;align-items:flex-start;}
+  .char-item{display:flex;flex-direction:column;align-items:center;gap:4px;width:62px;cursor:pointer;position:relative;flex:0 0 62px;}
   .char-item.disabled{cursor:default;}
-  .char-avatar{width:44px;height:44px;border-radius:50%;background-size:cover;background-position:center;border:2px solid var(--line);display:flex;align-items:center;justify-content:center;font-family:'Marcellus',serif;font-size:15px;color:#1b1430;}
+  .char-avatar{width:48px;height:48px;border-radius:50%;background-size:cover;background-position:center;border:2px solid var(--line);display:flex;align-items:center;justify-content:center;font-family:'Marcellus',serif;font-size:15px;color:#1b1430;}
   .char-item.selected .char-avatar{border-color:var(--gold);box-shadow:0 0 0 3px rgba(205,168,106,0.15);}
   .char-item.none .char-avatar{border:1.5px dashed var(--text-dim);background:none;color:var(--text-dim);font-size:16px;}
   .fav-selection-note{width:100%;font-size:10.5px;color:var(--text-dim);margin-top:6px;line-height:1.4}.fav-save-btn{margin-top:8px;width:100%;border-color:var(--gold);color:var(--gold);}.fav-save-btn:hover{background:rgba(214,180,110,.08)}.char-name{font-size:9.5px;color:var(--text-dim);text-align:center;max-width:56px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
@@ -497,8 +497,29 @@ async function load(){
       data.storyOrderVersion = 2;
       migrated = true;
     }
+    // Одноразово очищаем тестовые дополнительные строки, которые были
+    // добавлены предыдущей версией интерфейса. После этого дополнительные
+    // критерии появляются только по явному нажатию админа на «+».
+    if(data.extraFavoriteSchemaVersion !== 1){
+      data.stories.forEach(s=>{
+        if(Array.isArray(s.extraFavoriteCriteria) && s.extraFavoriteCriteria.length){
+          const ids = new Set(s.extraFavoriteCriteria.map(c=>c.id));
+          Object.values(data.ratings||{}).forEach(pr=>{
+            const r = pr && pr[s.id];
+            if(r && r.crit) ids.forEach(id=>delete r.crit[id]);
+          });
+          s.extraFavoriteCriteria = [];
+        }
+      });
+      data.extraFavoriteSchemaVersion = 1;
+      migrated = true;
+    }
     data.stories.forEach(s=>{
       if(!s.favoriteNames) { s.favoriteNames = []; migrated = true; }
+      if(!Array.isArray(s.extraFavoriteCriteria)) { s.extraFavoriteCriteria = []; migrated = true; }
+      s.extraFavoriteCriteria.forEach(c=>{
+        if(c.label !== 'Фаворит') { c.label = 'Фаворит'; migrated = true; }
+      });
       if(s.favoriteNames.length && typeof s.favoriteNames[0]==='string'){
         s.favoriteNames = s.favoriteNames.map(n=>({name:n, photo:''}));
         migrated = true;
@@ -1338,52 +1359,74 @@ function renderList(){
       if(c.key==='favorite') allCriteria.push(...extraFavCriteria);
     });
     if(r) ensureExtraFavoriteRatings(r, s);
-    const critRows = allCriteria.map(c=>{
-      const entry = (r && r.crit[c.key]) || {base:'',mod:'',name:'',names:[]};
-      let favInput = '';
-      let favAddRow = '';
-      if(c.key==='favorite'){
-        const chars = [...(s.favoriteNames||[])];
-        const selected = favoriteNamesOf(r);
-        const editable = canEdit();
-        favInput = `<div class="char-gallery">
-          <div class="char-item none ${selected.length===0?'selected':''} ${editable?'':'disabled'}" ${editable?`onclick=\"toggleFavName('${s.id}', '')\"`:''}>
-            <div class="char-avatar">—</div><div class="char-name">не выбран</div>
-          </div>
-          ${chars.map(ch=>{
-            const click = `toggleFavName('${s.id}', decodeURIComponent('${encodeURIComponent(ch.name)}'))`;
-            return `<div class="char-item ${selected.includes(ch.name)?'selected':''} ${editable?'':'disabled'}" ${editable?`onclick=\"${click}\"`:''}>
-              <div class="char-avatar" style="${ch.photo?`background-image:url(${ch.photo});`:`background:${colorFor(ch.name)};`}">${ch.photo?'':initials(ch.name)}</div>
-              <div class="char-name">${escapeHtml(ch.name)}</div>
-            </div>`;
-          }).join('')}
-        </div>`;
-        if(isCurrentAdmin()){
-          favAddRow = `<div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">
-            <button class="filter-btn" onclick="openAddFavForm('${s.id}')" style="margin-top:0;">+ Добавить персонажа</button>
-            ${selected.length ? `<button class="filter-btn fav-delete-btn" onclick="removeStoryFavorite('${s.id}', decodeURIComponent('${encodeURIComponent(selected[0])}'))" style="margin-top:0;color:var(--rose);border-color:rgba(194,123,151,.45);">Удалить первого выбранного</button>` : ''}
-          </div>`;
-        }
-      }
+    const favoriteCriterion = CRITERIA.find(c=>c.key==='favorite');
+    const extraCrits = extraFavCriteria;
+    const favoriteRows = [];
+    if(favoriteCriterion){
+      const entry = (r && r.crit.favorite) || {base:'',mod:'',name:'',names:[]};
       const nextPlus = entry.mod==='+' ? '' : '+';
       const nextMinus = entry.mod==='-' ? '' : '-';
-      const fn = c.extraFavorite ? 'updateExtraFavoriteCrit' : 'updateCrit';
-      const extraRemove = c.extraFavorite && isCurrentAdmin()
-        ? `<button class="crit-fav-remove" title="Удалить этот критерий" onclick="event.stopPropagation();removeExtraFavoriteCriterion('${s.id}','${c.key}')">×</button>` : '';
-      const addFavButton = c.key==='favorite' && isCurrentAdmin()
-        ? `<button class="crit-fav-add" title="Добавить ещё один критерий фаворита" onclick="event.stopPropagation();addExtraFavoriteCriterion('${s.id}')">+</button>` : '';
-      return `<div class="crit-row" style="${c.key==='favorite'?'flex-wrap:wrap;':''}">
-        <div class="crit-name">${escapeHtml(c.label)}${extraRemove}</div>
+      favoriteRows.push(`<div class="crit-row favorite-criterion-row">
+        <div class="crit-name">${escapeHtml(favoriteCriterion.label)}</div>
         <div class="crit-controls">
-          <select ${canEdit()?'':'disabled'} onchange="${fn}('${s.id}','${c.key}','base',this.value)">${selectOptions(entry.base, baseOpts)}</select>
-          <button class="mod-btn ${entry.mod==='-'?'on':''}" ${canEdit()?'':'disabled'} onclick="${fn}('${s.id}','${c.key}','mod','${nextMinus}')">−</button>
-          <button class="mod-btn ${entry.mod==='+'?'on':''}" ${canEdit()?'':'disabled'} onclick="${fn}('${s.id}','${c.key}','mod','${nextPlus}')">+</button>
-          ${addFavButton}
-          ${c.extraFavorite ? '' : favInput}
+          <select ${canEdit()?'':'disabled'} onchange="updateCrit('${s.id}','favorite','base',this.value)">${selectOptions(entry.base, baseOpts)}</select>
+          <button class="mod-btn ${entry.mod==='-'?'on':''}" ${canEdit()?'':'disabled'} onclick="updateCrit('${s.id}','favorite','mod','${nextMinus}')">−</button>
+          <button class="mod-btn ${entry.mod==='+'?'on':''}" ${canEdit()?'':'disabled'} onclick="updateCrit('${s.id}','favorite','mod','${nextPlus}')">+</button>
+          ${isCurrentAdmin()?`<button class="crit-fav-add" title="Добавить ещё один критерий фаворита" onclick="event.stopPropagation();addExtraFavoriteCriterion('${s.id}')">+</button>`:''}
         </div>
-        ${c.extraFavorite ? '' : favAddRow}
+      </div>`);
+    }
+    extraCrits.forEach(c=>{
+      const entry = (r && r.crit[c.key]) || {base:'',mod:'',name:'',names:[]};
+      const nextPlus = entry.mod==='+' ? '' : '+';
+      const nextMinus = entry.mod==='-' ? '' : '-';
+      favoriteRows.push(`<div class="crit-row favorite-criterion-row favorite-extra-row">
+        <div class="crit-name"></div>
+        <div class="crit-controls">
+          <select ${canEdit()?'':'disabled'} onchange="updateExtraFavoriteCrit('${s.id}','${c.key}','base',this.value)">${selectOptions(entry.base, baseOpts)}</select>
+          <button class="mod-btn ${entry.mod==='-'?'on':''}" ${canEdit()?'':'disabled'} onclick="updateExtraFavoriteCrit('${s.id}','${c.key}','mod','${nextMinus}')">−</button>
+          <button class="mod-btn ${entry.mod==='+'?'on':''}" ${canEdit()?'':'disabled'} onclick="updateExtraFavoriteCrit('${s.id}','${c.key}','mod','${nextPlus}')">+</button>
+          ${isCurrentAdmin()?`<button class="crit-fav-remove" title="Удалить дополнительное место для оценки" onclick="event.stopPropagation();removeExtraFavoriteCriterion('${s.id}','${c.key}')">×</button>`:''}
+        </div>
+      </div>`);
+    });
+
+    const otherCriteriaBefore = CRITERIA.filter(c=>c.key!=='favorite').slice(0, CRITERIA.findIndex(c=>c.key==='favorite'));
+    const otherCriteriaAfter = CRITERIA.filter(c=>c.key!=='favorite').slice(CRITERIA.findIndex(c=>c.key==='favorite'));
+    const renderOtherCriteria = (criteria)=>criteria.map(c=>{
+      const entry = (r && r.crit[c.key]) || {base:'',mod:'',name:'',names:[]};
+      const nextPlus = entry.mod==='+' ? '' : '+';
+      const nextMinus = entry.mod==='-' ? '' : '-';
+      return `<div class="crit-row">
+        <div class="crit-name">${escapeHtml(c.label)}</div>
+        <div class="crit-controls">
+          <select ${canEdit()?'':'disabled'} onchange="updateCrit('${s.id}','${c.key}','base',this.value)">${selectOptions(entry.base, baseOpts)}</select>
+          <button class="mod-btn ${entry.mod==='-'?'on':''}" ${canEdit()?'':'disabled'} onclick="updateCrit('${s.id}','${c.key}','mod','${nextMinus}')">−</button>
+          <button class="mod-btn ${entry.mod==='+'?'on':''}" ${canEdit()?'':'disabled'} onclick="updateCrit('${s.id}','${c.key}','mod','${nextPlus}')">+</button>
+        </div>
       </div>`;
     }).join('');
+    const otherRowsBefore = renderOtherCriteria(otherCriteriaBefore);
+    const otherRowsAfter = renderOtherCriteria(otherCriteriaAfter);
+
+    const chars = [...(s.favoriteNames||[])];
+    const selected = favoriteNamesOf(r);
+    const editable = canEdit();
+    const favGallery = `<div class="char-gallery favorite-gallery">
+      <div class="char-item none ${selected.length===0?'selected':''} ${editable?'':'disabled'}" ${editable?`onclick="toggleFavName('${s.id}', '')"`:''}>
+        <div class="char-avatar">—</div>
+        <div class="char-name">не выбран</div>
+      </div>
+      ${chars.map(ch=>{
+        const click = `toggleFavName('${s.id}', decodeURIComponent('${encodeURIComponent(ch.name)}'))`;
+        return `<div class="char-item ${selected.includes(ch.name)?'selected':''} ${editable?'':'disabled'}" ${editable?`onclick="${click}"`:''}>
+          <div class="char-avatar" style="${ch.photo?`background-image:url(${ch.photo});`:`background:${colorFor(ch.name)};`}">${ch.photo?'':initials(ch.name)}</div>
+          <div class="char-name">${escapeHtml(ch.name)}</div>
+        </div>`;
+      }).join('')}
+    </div>`;
+    const favAdmin = isCurrentAdmin() ? `<div style="margin-top:7px;"><button class="filter-btn" onclick="openAddFavForm('${s.id}')">+ Добавить персонажа</button></div>` : '';
+    const critRows = otherRowsBefore + favoriteRows.join('') + favGallery + favAdmin + otherRowsAfter;
 
     const emotionsSel = (r && r.crit.emotions) || [];
     const emotionChips = EMOTION_TAGS.map(tag=>{
@@ -1485,8 +1528,7 @@ async function saveAddFavForm(){
   const s = data.stories.find(x=>x.id===addFavStoryId);
   if(!s) return;
   if(!s.favoriteNames) s.favoriteNames = [];
-      if(!Array.isArray(s.extraFavoriteCriteria)) { s.extraFavoriteCriteria = []; migrated = true; }
-  const existing = s.favoriteNames.find(f=>f.name===name);
+      const existing = s.favoriteNames.find(f=>f.name===name);
   if(existing){
     if(pendingFavPhoto) existing.photo = pendingFavPhoto;
   } else {
