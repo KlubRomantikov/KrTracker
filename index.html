@@ -154,8 +154,8 @@
   .note-tag{color:var(--text-dim);font-style:italic;}
   .fav-tag{color:var(--rose);}
   .chevron{color:var(--text-dim);font-size:11px;transition:transform .15s;flex:0 0 auto;margin-top:3px;}
-  .story-drag-handle{display:none;color:var(--text-dim);font-size:18px;line-height:1;flex:0 0 auto;margin-top:0;padding:2px 4px;border-radius:7px;cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none;}
-  .admin-reorder .story-drag-handle{display:block;}
+  .story-drag-handle{display:none;color:var(--text-dim);font-size:18px;line-height:1;flex:0 0 auto;width:32px;height:32px;margin-top:-4px;padding:0;border-radius:8px;cursor:grab;touch-action:none !important;user-select:none !important;-webkit-user-select:none !important;-webkit-touch-callout:none !important;-webkit-tap-highlight-color:transparent;align-items:center;justify-content:center;}
+  .admin-reorder .story-drag-handle{display:flex;}
   .story.dragging{opacity:.72;transform:scale(.99);border-color:var(--gold);box-shadow:0 8px 22px rgba(0,0,0,.28);}
   .story.drag-over{border-color:var(--gold);}
   .story.open .chevron{transform:rotate(90deg);}
@@ -1573,86 +1573,154 @@ function renderList(){
 }
 
 let storyDragState = null;
+
 function setupStoryReorder(){
   const list = document.getElementById('list');
   if(!list) return;
-  list.querySelectorAll('.story.admin-reorder').forEach(card=>{
-    if(card.dataset.reorderBound==='1') return;
-    card.dataset.reorderBound='1';
-    let timer = null;
-    let startX = 0, startY = 0;
-    let armed = false;
 
-    const cancel = ()=>{
-      if(timer){ clearTimeout(timer); timer=null; }
-      armed=false;
+  // На телефоне используем обычные touch-события, а не только Pointer Events.
+  // Это специально: некоторые версии Chrome при pointer capture на content://
+  // начинают выделять текст вместо переноса карточки.
+  list.querySelectorAll('.story.admin-reorder').forEach(card=>{
+    const handle = card.querySelector('.story-drag-handle');
+    if(!handle || handle.dataset.reorderBound==='1') return;
+    handle.dataset.reorderBound='1';
+
+    let active = false;
+    let pointerId = null;
+    let touchId = null;
+
+    const clearOver = ()=>{
+      list.querySelectorAll('.story.drag-over').forEach(x=>x.classList.remove('drag-over'));
     };
 
-    card.addEventListener('pointerdown', e=>{
-      if(e.button!==undefined && e.button!==0) return;
-      if(e.target.closest('button,input,select,textarea,a')) return;
-      if(storyDragState) return;
-      startX=e.clientX; startY=e.clientY; armed=true;
-      timer=setTimeout(()=>{
-        timer=null;
-        storyDragState={card,startId:card.dataset.storyId,moved:false};
-        card.classList.add('dragging');
-        try{ card.setPointerCapture(e.pointerId); }catch(_){}
-      },450);
-    });
+    const start = (x,y,source)=>{
+      if(storyDragState) return false;
+      active = true;
+      storyDragState = {card, startId:card.dataset.storyId, moved:false, source};
+      card.classList.add('dragging');
+      return true;
+    };
 
-    card.addEventListener('pointermove', e=>{
-      if(armed && !storyDragState){
-        if(Math.hypot(e.clientX-startX,e.clientY-startY)>9) cancel();
-        return;
-      }
-      if(!storyDragState || storyDragState.card!==card) return;
-      e.preventDefault();
-      storyDragState.moved=true;
-      const el=document.elementFromPoint(e.clientX,e.clientY);
-      const target=el && el.closest ? el.closest('.story.admin-reorder') : null;
+    const move = (x,y,source)=>{
+      if(!active || !storyDragState || storyDragState.card!==card) return;
+      storyDragState.moved = true;
+
+      const el = document.elementFromPoint(x,y);
+      const target = el && el.closest ? el.closest('.story.admin-reorder') : null;
       if(!target || target===card || target.parentElement!==list) return;
-      target.classList.add('drag-over');
-      const r=target.getBoundingClientRect();
-      if(e.clientY < r.top + r.height/2) list.insertBefore(card,target);
+
+      const r = target.getBoundingClientRect();
+      if(y < r.top + r.height/2) list.insertBefore(card,target);
       else list.insertBefore(card,target.nextSibling);
-      list.querySelectorAll('.story.drag-over').forEach(x=>{if(x!==target)x.classList.remove('drag-over');});
+
+      clearOver();
+      target.classList.add('drag-over');
+    };
+
+    const finish = async (source)=>{
+      if(!active || !storyDragState || storyDragState.card!==card) return;
+
+      const moved = !!storyDragState.moved;
+      card.classList.remove('dragging');
+      clearOver();
+      active = false;
+      pointerId = null;
+      touchId = null;
+      storyDragState = null;
+
+      if(!moved) return;
+
+      // Берём порядок карточек из DOM и переносим только видимые истории.
+      // Каждая история попадает в массив ровно один раз — дублирования быть не может.
+      const ids=[];
+      const seen=new Set();
+      list.querySelectorAll('.story[data-story-id]').forEach(el=>{
+        const id=el.dataset.storyId;
+        if(id && !seen.has(id)){
+          seen.add(id);
+          ids.push(id);
+        }
+      });
+
+      const visibleSet=new Set(ids);
+      const byId=new Map(data.stories.map(x=>[x.id,x]));
+      const reordered=ids.map(id=>byId.get(id)).filter(Boolean);
+      let pos=0;
+      data.stories=data.stories.map(x=>visibleSet.has(x.id) ? reordered[pos++] : x);
+
+      normalizeStoriesForSave();
+      await persist();
+      renderList();
+    };
+
+    // ===== TOUCH / ANDROID =====
+    handle.addEventListener('touchstart', e=>{
+      if(e.touches.length!==1) return;
+      const t=e.touches[0];
+      if(!start(t.clientX,t.clientY,'touch')) return;
+      touchId=t.identifier;
+      // Критично: сразу запрещаем выделение текста и прокрутку.
+      e.preventDefault();
+      e.stopPropagation();
     }, {passive:false});
 
-    const finish = async e=>{
-      if(timer) clearTimeout(timer);
-      timer=null; armed=false;
-      if(!storyDragState || storyDragState.card!==card) return;
-      const st=storyDragState;
-      storyDragState=null;
+    handle.addEventListener('touchmove', e=>{
+      if(!active || touchId===null) return;
+      const t=[...e.touches].find(x=>x.identifier===touchId);
+      if(!t) return;
+      e.preventDefault();
+      e.stopPropagation();
+      move(t.clientX,t.clientY,'touch');
+    }, {passive:false});
+
+    handle.addEventListener('touchend', async e=>{
+      if(!active || touchId===null) return;
+      e.preventDefault();
+      e.stopPropagation();
+      await finish('touch');
+    }, {passive:false});
+
+    handle.addEventListener('touchcancel', async e=>{
+      if(!active || touchId===null) return;
+      e.preventDefault();
+      e.stopPropagation();
+      // При отмене ничего не сохраняем.
       card.classList.remove('dragging');
-      list.querySelectorAll('.story.drag-over').forEach(x=>x.classList.remove('drag-over'));
-      try{ card.releasePointerCapture(e.pointerId); }catch(_){}
-      if(st.moved){
-        // Считываем порядок только по уникальным id карточек, которые реально
-        // находятся на экране. Никаких push/clone — только перестановка ссылок.
-        normalizeStoriesForSave();
-        const ids=[];
-        const seen=new Set();
-        list.querySelectorAll('.story[data-story-id]').forEach(el=>{
-          const id=el.dataset.storyId;
-          if(id && !seen.has(id)){ seen.add(id); ids.push(id); }
-        });
+      clearOver();
+      active=false;
+      touchId=null;
+      storyDragState=null;
+    }, {passive:false});
 
-        const visibleSet=new Set(ids);
-        const byId=new Map(data.stories.map(x=>[x.id,x]));
-        const reordered=ids.map(id=>byId.get(id)).filter(Boolean);
-        let pos=0;
-        data.stories=data.stories.map(x=>visibleSet.has(x.id) ? reordered[pos++] : x);
+    // ===== MOUSE / DESKTOP =====
+    handle.addEventListener('mousedown', e=>{
+      if(e.button!==0) return;
+      if(!start(e.clientX,e.clientY,'mouse')) return;
+      pointerId='mouse';
+      e.preventDefault();
+      e.stopPropagation();
+    });
 
-        normalizeStoriesForSave();
-        await persist();
-        renderList();
-      }
+    const mouseMove = e=>{
+      if(pointerId!=='mouse' || !active) return;
+      e.preventDefault();
+      move(e.clientX,e.clientY,'mouse');
     };
-    card.addEventListener('pointerup', finish);
-    card.addEventListener('pointercancel', finish);
-    card.addEventListener('pointerleave', ()=>{ if(armed && !storyDragState) cancel(); });
+    const mouseUp = async e=>{
+      if(pointerId!=='mouse' || !active) return;
+      e.preventDefault();
+      await finish('mouse');
+    };
+    document.addEventListener('mousemove',mouseMove,{passive:false});
+    document.addEventListener('mouseup',mouseUp,{passive:false});
+
+    // ===== POINTER: только мышь, touch здесь намеренно игнорируем =====
+    handle.addEventListener('pointerdown',e=>{
+      if(e.pointerType!=='mouse') return;
+      e.preventDefault();
+      e.stopPropagation();
+    },{passive:false});
   });
 }
 
