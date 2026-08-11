@@ -71,14 +71,14 @@
   .compare-fav{color:var(--rose);}
   .compare-none{font-size:10.5px;color:var(--text-dim);font-style:italic;}
   .compare-empty{font-size:11.5px;color:var(--text-dim);font-style:italic;}
-  .char-gallery{display:flex;flex-wrap:wrap;gap:7px 5px;margin-top:8px;align-items:flex-start;}
-  .char-item{position:relative;display:flex;flex-direction:column;align-items:center;gap:4px;width:62px;cursor:pointer;position:relative;flex:0 0 62px;}
+  .char-gallery{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;}
+  .char-item{display:flex;flex-direction:column;align-items:center;gap:4px;width:58px;cursor:pointer;position:relative;flex:0 0 auto;}
   .char-item.disabled{cursor:default;}
-  .char-avatar{width:48px;height:48px;border-radius:50%;background-size:cover;background-position:center;border:2px solid var(--line);display:flex;align-items:center;justify-content:center;font-family:'Marcellus',serif;font-size:15px;color:#1b1430;}
+  .char-avatar{width:44px;height:44px;border-radius:50%;background-size:cover;background-position:center;border:2px solid var(--line);display:flex;align-items:center;justify-content:center;font-family:'Marcellus',serif;font-size:15px;color:#1b1430;}
   .char-item.selected .char-avatar{border-color:var(--gold);box-shadow:0 0 0 3px rgba(205,168,106,0.15);}
   .char-item.none .char-avatar{border:1.5px dashed var(--text-dim);background:none;color:var(--text-dim);font-size:16px;}
-  .fav-selection-note{width:100%;font-size:10.5px;color:var(--text-dim);margin-top:6px;line-height:1.4}.fav-save-btn{margin-top:8px;width:100%;border-color:var(--gold);color:var(--gold);}.fav-save-btn:hover{background:rgba(214,180,110,.08)}.char-name{font-size:9.5px;color:var(--text-dim);text-align:center;max-width:56px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-  .crit-fav-add{width:30px;height:30px;border:1px solid var(--line);border-radius:9px;background:var(--bg-1);color:var(--gold);font-size:20px;line-height:26px;padding:0;cursor:pointer;margin-left:6px}.crit-fav-add:hover{background:rgba(214,180,110,.10);border-color:var(--gold)}.crit-fav-remove{width:22px;height:22px;border:0;background:transparent;color:var(--rose);font-size:17px;line-height:20px;padding:0;cursor:pointer;margin-left:5px;vertical-align:middle}.fav-admin-actions{position:absolute;top:-6px;right:-6px;display:flex;gap:2px;z-index:3}.fav-edit-btn,.fav-delete-btn{width:18px;height:18px;border:1px solid var(--line);border-radius:50%;background:var(--bg-1);font-size:11px;line-height:15px;padding:0;cursor:pointer}.fav-edit-btn{color:var(--gold)}.fav-edit-btn:hover{background:var(--gold);color:#1b1430}.fav-delete-btn{border-color:var(--rose);color:var(--rose)}.fav-delete-btn:hover{background:var(--rose);color:#fff}
+  .fav-selection-note{width:100%;font-size:10.5px;color:var(--text-dim);margin-top:6px;line-height:1.4}.fav-save-btn{margin-top:8px;width:100%;border-color:var(--gold);color:var(--gold);}.fav-save-btn:hover{background:rgba(214,180,110,.08)}.char-name{font-size:9.5px;color:var(--text-dim);text-align:center;max-width:48px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .crit-fav-add{width:30px;height:30px;border:1px solid var(--line);border-radius:9px;background:var(--bg-1);color:var(--gold);font-size:20px;line-height:26px;padding:0;cursor:pointer;margin-left:6px}.crit-fav-add:hover{background:rgba(214,180,110,.10);border-color:var(--gold)}.crit-fav-remove{width:22px;height:22px;border:0;background:transparent;color:var(--rose);font-size:17px;line-height:20px;padding:0;cursor:pointer;margin-left:5px;vertical-align:middle}
   .char-item.selected .char-name{color:var(--gold);}
   .char-del{position:absolute;top:-4px;right:2px;width:16px;height:16px;border-radius:50%;background:var(--rose);color:#fff;border:none;font-size:10px;line-height:1;cursor:pointer;z-index:2;}
   .fav-badge-icon{width:15px;height:15px;border-radius:50%;flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;font-size:7.5px;font-weight:700;color:#1b1430;background-size:cover;background-position:center;}
@@ -154,6 +154,10 @@
   .note-tag{color:var(--text-dim);font-style:italic;}
   .fav-tag{color:var(--rose);}
   .chevron{color:var(--text-dim);font-size:11px;transition:transform .15s;flex:0 0 auto;margin-top:3px;}
+  .story-drag-handle{display:none;color:var(--text-dim);font-size:18px;line-height:1;flex:0 0 auto;margin-top:0;padding:2px 4px;border-radius:7px;cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none;}
+  .admin-reorder .story-drag-handle{display:block;}
+  .story.dragging{opacity:.72;transform:scale(.99);border-color:var(--gold);box-shadow:0 8px 22px rgba(0,0,0,.28);}
+  .story.drag-over{border-color:var(--gold);}
   .story.open .chevron{transform:rotate(90deg);}
 
   .story-body{display:none;padding:0 14px 16px;}
@@ -192,11 +196,6 @@
   .del-btn{background:none;border:none;color:var(--rose);font-family:'Manrope',sans-serif;font-size:10.5px;cursor:pointer;text-decoration:underline;text-underline-offset:2px;}
 
   .empty-state{text-align:center;padding:36px 20px;color:var(--text-dim);font-style:italic;font-size:13.5px;}
-
-.admin-sortable-story{position:relative;touch-action:pan-y;user-select:none;}
-.admin-sortable-story.longpress-drag{opacity:.62;transform:scale(.985);box-shadow:0 10px 28px rgba(0,0,0,.18);z-index:20;}
-.admin-sortable-story::after{content:'↕';position:absolute;right:12px;top:12px;font-size:13px;color:var(--text-dim);opacity:.45;pointer-events:none;}
-.admin-sortable-story.longpress-drag::after{content:'↕';opacity:.9;}
 </style>
 </head>
 <body>
@@ -232,7 +231,7 @@
 
   <div class="add-fav-backdrop" id="addFavBackdrop"></div>
   <div class="add-person-form add-fav-form" id="addFavForm">
-    <h3 id="favFormTitle">Добавить персонажа</h3>
+    <h3>Добавить персонажа</h3>
     <input type="text" id="favNameInput" placeholder="Имя персонажа или пары">
     <div class="photo-row">
       <div class="photo-preview" id="favPhotoPreview"></div>
@@ -399,8 +398,6 @@ let confirmDeleteProfileId = null;
 let pendingPhoto = '';
 let addFavStoryId = null;
 let pendingFavPhoto = '';
-let editingFavStoryId = null;
-let editingFavName = null;
 
 function uid(prefix){ return (prefix||'x')+Date.now()+Math.random().toString(36).slice(2,7); }
 function blankCrit(){
@@ -1420,18 +1417,9 @@ function renderList(){
     const selected = favoriteNamesOf(r);
     const editable = canEdit();
     const favGallery = `<div class="char-gallery favorite-gallery">
-      <div class="char-item none ${selected.length===0?'selected':''} ${editable?'':'disabled'}" ${editable?`onclick="toggleFavName('${s.id}', '')"`:''}>
-        <div class="char-avatar">—</div>
-        <div class="char-name">не выбран</div>
-      </div>
       ${chars.map(ch=>{
         const click = `toggleFavName('${s.id}', decodeURIComponent('${encodeURIComponent(ch.name)}'))`;
-        const adminFavActions = isCurrentAdmin() ? `<div class="fav-admin-actions">
-            <button class="fav-edit-btn" title="Редактировать фаворита" onclick="event.stopPropagation();openEditFavForm('${s.id}', decodeURIComponent('${encodeURIComponent(ch.name)}'))">✎</button>
-            <button class="fav-delete-btn" title="Удалить фаворита" onclick="event.stopPropagation();removeStoryFavorite('${s.id}', decodeURIComponent('${encodeURIComponent(ch.name)}'))">×</button>
-          </div>` : '';
         return `<div class="char-item ${selected.includes(ch.name)?'selected':''} ${editable?'':'disabled'}" ${editable?`onclick="${click}"`:''}>
-          ${adminFavActions}
           <div class="char-avatar" style="${ch.photo?`background-image:url(${ch.photo});`:`background:${colorFor(ch.name)};`}">${ch.photo?'':initials(ch.name)}</div>
           <div class="char-name">${escapeHtml(ch.name)}</div>
         </div>`;
@@ -1449,7 +1437,7 @@ function renderList(){
     const authorList = [];
 
     return `
-      <div class="story ${isOpen?'open':''}" id="card-${s.id}">
+      <div class="story ${isOpen?'open':''} ${isCurrentAdmin()?'admin-reorder':''}" id="card-${s.id}" data-story-id="${s.id}">
         <div class="story-head" style="--status-color:${statusColor}">
           <div class="check-stack">
             <button class="checkbox-read ${read?'checked':''}" ${canEdit()?'':'disabled'} onclick="event.stopPropagation(); toggleRead('${s.id}', ${!read})">${read?'✓':''}</button>
@@ -1468,6 +1456,7 @@ function renderList(){
               ${r && r.notes ? `<div class="note-tag">${escapeHtml(r.notes)}</div>` : ''}
             </div>
           </div>
+          ${isCurrentAdmin()?`<div class="story-drag-handle" title="Зажмите и переместите историю" aria-label="Переместить историю">↕</div>`:''}
           <div class="chevron" onclick="toggleOpen('${s.id}')">▶</div>
         </div>
         <div class="story-body">
@@ -1500,6 +1489,98 @@ function renderList(){
         </div>
       </div>`;
   }).join('');
+  if(isCurrentAdmin()) setupStoryReorder();
+}
+
+let storyDragState = null;
+function setupStoryReorder(){
+  const list = document.getElementById('list');
+  if(!list) return;
+
+  list.querySelectorAll('.story.admin-reorder').forEach(card=>{
+    if(card.dataset.reorderBound==='1') return;
+    card.dataset.reorderBound='1';
+    const handle = card.querySelector('.story-drag-handle');
+    if(!handle) return;
+
+    // The handle itself is the drag target. On touch devices we start
+    // immediately — no long-press timer, so Android cannot swallow the gesture.
+    handle.style.touchAction='none';
+    handle.style.webkitUserSelect='none';
+    handle.style.userSelect='none';
+    handle.oncontextmenu = e => e.preventDefault();
+
+    const finish = async (save=true) => {
+      const st=storyDragState;
+      if(!st || st.card!==card) return;
+      storyDragState=null;
+      card.classList.remove('dragging');
+      list.querySelectorAll('.story.drag-over').forEach(x=>x.classList.remove('drag-over'));
+      document.body.style.userSelect='';
+      document.body.style.webkitUserSelect='';
+      document.body.style.overflow='';
+      if(save && st.moved){
+        const ids=[...list.querySelectorAll('.story[data-story-id]')].map(x=>x.dataset.storyId);
+        const visibleSet=new Set(ids);
+        const byId=new Map(data.stories.map(x=>[x.id,x]));
+        const reordered=ids.map(id=>byId.get(id)).filter(Boolean);
+        let pos=0;
+        data.stories=data.stories.map(x=>visibleSet.has(x.id)?reordered[pos++]:x);
+        await persist();
+        renderList();
+      }
+    };
+
+    const move = (clientX, clientY, ev) => {
+      if(!storyDragState || storyDragState.card!==card) return;
+      if(ev && ev.cancelable) ev.preventDefault();
+      storyDragState.moved=true;
+      const el=document.elementFromPoint(clientX, clientY);
+      const target=el && el.closest ? el.closest('.story.admin-reorder') : null;
+      if(!target || target===card || target.parentElement!==list) return;
+
+      list.querySelectorAll('.story.drag-over').forEach(x=>x.classList.remove('drag-over'));
+      target.classList.add('drag-over');
+      const r=target.getBoundingClientRect();
+      if(clientY < r.top + r.height/2){
+        if(card.nextElementSibling!==target) list.insertBefore(card,target);
+      } else {
+        if(target.nextElementSibling!==card) list.insertBefore(card,target.nextSibling);
+      }
+    };
+
+    // Pointer events cover Android touch + mouse. We deliberately use the
+    // document for move/up so dragging keeps working after the finger leaves the handle.
+    handle.addEventListener('pointerdown', e=>{
+      if(e.button!==undefined && e.button!==0) return;
+      if(storyDragState) return;
+      e.preventDefault();
+      e.stopPropagation();
+      storyDragState={card,startId:card.dataset.storyId,moved:false};
+      card.classList.add('dragging');
+      document.body.style.userSelect='none';
+      document.body.style.webkitUserSelect='none';
+      // Prevent the page from scrolling while the drag is active.
+      document.body.style.overflow='hidden';
+      try{ handle.setPointerCapture(e.pointerId); }catch(_){ }
+    }, {passive:false});
+
+    document.addEventListener('pointermove', e=>{
+      if(!storyDragState || storyDragState.card!==card) return;
+      move(e.clientX,e.clientY,e);
+    }, {passive:false});
+
+    document.addEventListener('pointerup', e=>{
+      if(!storyDragState || storyDragState.card!==card) return;
+      if(e.cancelable) e.preventDefault();
+      finish(true);
+    }, {passive:false});
+
+    document.addEventListener('pointercancel', ()=>{
+      if(!storyDragState || storyDragState.card!==card) return;
+      finish(false);
+    }, {passive:false});
+  });
 }
 
 function render(){
@@ -1520,44 +1601,16 @@ function render(){
 function openAddFavForm(storyId){
   if(!canEdit()) return;
   addFavStoryId = storyId;
-  editingFavStoryId = null;
-  editingFavName = null;
   pendingFavPhoto = '';
-  document.getElementById('favFormTitle').textContent = 'Добавить персонажа';
-  document.getElementById('saveFav').textContent = 'Добавить';
   document.getElementById('favNameInput').value = '';
   document.getElementById('favPhotoPreview').style.backgroundImage = '';
-  document.getElementById('favPhotoInput').value = '';
-  document.getElementById('addFavBackdrop').style.display = 'block';
-  document.getElementById('addFavForm').style.display = 'block';
-  document.getElementById('favNameInput').focus();
-}
-function openEditFavForm(storyId, name){
-  if(!isCurrentAdmin()) return;
-  const s = data.stories.find(x=>x.id===storyId);
-  const fav = s && (s.favoriteNames||[]).find(f=>f.name===name);
-  if(!fav) return;
-  addFavStoryId = storyId;
-  editingFavStoryId = storyId;
-  editingFavName = name;
-  pendingFavPhoto = fav.photo || '';
-  document.getElementById('favFormTitle').textContent = 'Редактировать персонажа';
-  document.getElementById('saveFav').textContent = 'Сохранить';
-  document.getElementById('favNameInput').value = fav.name;
-  document.getElementById('favPhotoPreview').style.backgroundImage = fav.photo ? `url(${fav.photo})` : '';
-  document.getElementById('favPhotoInput').value = '';
   document.getElementById('addFavBackdrop').style.display = 'block';
   document.getElementById('addFavForm').style.display = 'block';
   document.getElementById('favNameInput').focus();
 }
 function closeAddFavForm(){
   addFavStoryId = null;
-  editingFavStoryId = null;
-  editingFavName = null;
   pendingFavPhoto = '';
-  document.getElementById('favNameInput').value = '';
-  document.getElementById('favPhotoPreview').style.backgroundImage = '';
-  document.getElementById('favPhotoInput').value = '';
   document.getElementById('addFavBackdrop').style.display = 'none';
   document.getElementById('addFavForm').style.display = 'none';
 }
@@ -1568,39 +1621,18 @@ async function saveAddFavForm(){
   const s = data.stories.find(x=>x.id===addFavStoryId);
   if(!s) return;
   if(!s.favoriteNames) s.favoriteNames = [];
-
-  if(editingFavStoryId === addFavStoryId && editingFavName !== null){
-    const existing = s.favoriteNames.find(f=>f.name===editingFavName);
-    if(!existing) return;
-    const duplicate = s.favoriteNames.find(f=>f.name===name && f.name!==editingFavName);
-    if(duplicate){ alert('Такой персонаж уже есть в этой истории'); return; }
-    const oldName = existing.name;
-    existing.name = name;
-    existing.photo = pendingFavPhoto || '';
-    Object.keys(data.ratings||{}).forEach(pid=>{
-      const r = data.ratings[pid] && data.ratings[pid][addFavStoryId];
-      if(!r || !r.crit) return;
-      if(r.crit.favorite) setFavoriteNames(r, favoriteNamesOf(r).map(n=>n===oldName?name:n));
-      extraFavoriteCriteriaOf(s).forEach(c=>{
-        const entry = r.crit[c.id];
-        if(entry) setExtraFavoriteNames(entry, extraFavoriteNamesOf(entry).map(n=>n===oldName?name:n));
-      });
-    });
+      const existing = s.favoriteNames.find(f=>f.name===name);
+  if(existing){
+    if(pendingFavPhoto) existing.photo = pendingFavPhoto;
   } else {
-    const existing = s.favoriteNames.find(f=>f.name===name);
-    if(existing){
-      if(pendingFavPhoto) existing.photo = pendingFavPhoto;
-    } else {
-      s.favoriteNames.push({ name, photo: pendingFavPhoto || '' });
-    }
+    s.favoriteNames.push({ name, photo: pendingFavPhoto || '' });
   }
   closeAddFavForm();
   await persist();
   render();
 }
 async function removeStoryFavorite(storyId, name){
-  if(!isCurrentAdmin()) return;
-  if(!confirm(`Удалить фаворита «${name}» из этой истории?`)) return;
+  if(!canEdit()) return;
   const s = data.stories.find(x=>x.id===storyId);
   if(!s) return;
   s.favoriteNames = (s.favoriteNames||[]).filter(f=>f.name!==name);
@@ -1677,7 +1709,7 @@ function renderAdmin(){
         </div>`;
     }).join('') || `<div class="compare-empty">Пока никто не оставил мнение об этой истории</div>`;
     return `
-      <div class="story admin-sortable-story ${isOpen?'open':''}" data-story-id="${s.id}">
+      <div class="story ${isOpen?'open':''}">
         <div class="story-head" style="--status-color:${s.status==='done'?'var(--gold)':'var(--mint)'};cursor:pointer;" onclick="toggleRatingStory('${s.id}')">
           <div style="font-family:'Marcellus',serif;color:var(--text-dim);font-size:15px;width:22px;flex:0 0 auto;text-align:center;">${i+1}</div>
           <div class="story-main">
@@ -1699,62 +1731,6 @@ function renderAdmin(){
         </div>
       </div>`;
   }).join('');
-  setupAdminStoryReorder();
-}
-
-let adminDragState = {id:null, timer:null, dragging:false, suppressClick:false, moved:false};
-function setupAdminStoryReorder(){
-  const list = document.getElementById('adminList');
-  if(!list || !canEdit()) return;
-  const cards = [...list.querySelectorAll('.admin-sortable-story')];
-  cards.forEach(card=>{
-    card.addEventListener('pointerdown', e=>{
-      if(e.button!==undefined && e.button!==0) return;
-      clearTimeout(adminDragState.timer);
-      adminDragState.id=card.dataset.storyId;
-      adminDragState.dragging=false;
-      adminDragState.suppressClick=false;
-      adminDragState.moved=false;
-      adminDragState.timer=setTimeout(()=>{
-        adminDragState.dragging=true;
-        card.classList.add('longpress-drag');
-        try{ card.setPointerCapture(e.pointerId); }catch(_){ }
-      },420);
-    });
-    card.addEventListener('pointermove', e=>{
-      if(!adminDragState.dragging || adminDragState.id!==card.dataset.storyId) return;
-      const under=document.elementFromPoint(e.clientX,e.clientY)?.closest('.admin-sortable-story');
-      if(!under || under===card || !list.contains(under)) return;
-      const all=[...list.querySelectorAll('.admin-sortable-story')];
-      const from=all.indexOf(card), to=all.indexOf(under);
-      if(from<0 || to<0 || from===to) return;
-      if(from<to) under.after(card); else under.before(card);
-      adminDragState.moved=true;
-      adminDragState.suppressClick=true;
-    });
-    const finish=async()=>{
-      clearTimeout(adminDragState.timer);
-      if(!adminDragState.dragging){ adminDragState.id=null; return; }
-      adminDragState.dragging=false;
-      card.classList.remove('longpress-drag');
-      if(adminDragState.moved){
-        const order=[...list.querySelectorAll('.admin-sortable-story')].map(el=>el.dataset.storyId);
-        const byId=new Map(data.stories.map(st=>[st.id,st]));
-        data.stories=order.map(id=>byId.get(id)).filter(Boolean);
-        await persist();
-        renderAdmin();
-      }
-      adminDragState.id=null;
-      adminDragState.moved=false;
-      adminDragState.suppressClick=true;
-    };
-    card.addEventListener('pointerup', finish);
-    card.addEventListener('pointercancel', finish);
-    card.addEventListener('pointerleave', ()=>{ if(!adminDragState.dragging) clearTimeout(adminDragState.timer); });
-    card.addEventListener('click', e=>{
-      if(adminDragState.suppressClick){ e.preventDefault(); e.stopPropagation(); adminDragState.suppressClick=false; }
-    }, true);
-  });
 }
 
 function toggleRatingStory(id){
