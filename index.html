@@ -77,7 +77,7 @@
   .char-avatar{width:44px;height:44px;border-radius:50%;background-size:cover;background-position:center;border:2px solid var(--line);display:flex;align-items:center;justify-content:center;font-family:'Marcellus',serif;font-size:15px;color:#1b1430;}
   .char-item.selected .char-avatar{border-color:var(--gold);box-shadow:0 0 0 3px rgba(205,168,106,0.15);}
   .char-item.none .char-avatar{border:1.5px dashed var(--text-dim);background:none;color:var(--text-dim);font-size:16px;}
-  .char-name{font-size:9.5px;color:var(--text-dim);text-align:center;max-width:56px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .fav-selection-note{width:100%;font-size:10.5px;color:var(--text-dim);margin-top:6px;line-height:1.4}.fav-save-btn{margin-top:8px;width:100%;border-color:var(--gold);color:var(--gold);}.fav-save-btn:hover{background:rgba(214,180,110,.08)}.char-name{font-size:9.5px;color:var(--text-dim);text-align:center;max-width:56px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .char-item.selected .char-name{color:var(--gold);}
   .char-del{position:absolute;top:-4px;right:2px;width:16px;height:16px;border-radius:50%;background:var(--rose);color:#fff;border:none;font-size:10px;line-height:1;cursor:pointer;z-index:2;}
   .fav-badge-icon{width:15px;height:15px;border-radius:50%;flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;font-size:7.5px;font-weight:700;color:#1b1430;background-size:cover;background-position:center;}
@@ -194,7 +194,7 @@
 </style>
 </head>
 <body>
-<div class="wrap" id="mainView" style="display:none;">
+<div class="wrap" id="mainView">
   <div id="saveBanner" class="save-banner" style="display:none;">
     <span>Не удалось сохранить последние изменения — пробуем снова автоматически.</span>
     <button id="retrySaveBtn">Повторить сейчас</button>
@@ -272,7 +272,7 @@
   <div id="list"></div>
 </div>
 
-<div class="wrap" id="adminView" style="display:block;">
+<div class="wrap" id="adminView" style="display:none;">
   <button class="btn btn-dark" id="goToShelfBtn" style="margin-bottom:16px;width:100%;">Открыть стеллаж (оценивать / редактировать)</button>
   <div class="eyebrow">Свод мнений</div>
   <h1 style="font-size:26px;">Общий рейтинг</h1>
@@ -355,7 +355,7 @@ const STORY_ORDER = [
   ['Кали. Пламя Сансары','Александра Р.'],
   ['Бездушная','Винси В.'],
   ['Эдемов сад','Анастасия Савина'],
-  ['Te Amo. Залив надежды.','Дмитрий Х.'],
+  ['Te Amo. Залив надежды','Дмитрий Х.'],
   ['Идеал. Том 2','Фэй Г.'],
   ['Разбитое сердце Астреи','Елена Х.'],
   ['Секрет Небес. Реквием','Александра К.'],
@@ -375,7 +375,7 @@ const STORY_ORDER = [
   ['Грехи, просящие возмездия','Лэнгли Хайд'],
   ['Водяная Лилия','Клара'],
   ['Тени Сентфора 2 — Вне времени','Анна В. (асистентка Вероники)'],
-  ['Рожденная Солнцем (вселенная РЛ)','N.O.V.A']
+  ['Рожденная Солнцем (вселенная Рл)','N.O.V.A']
 ];
 
 const AVATAR_COLORS = ['#8a5fb0','#b0607a','#5f7fb0','#7a9d6a','#b08a4a','#9c5f8a','#5fa0a0'];
@@ -403,6 +403,17 @@ function blankCrit(){
   return c;
 }
 function splitAuthors(str){ return (str||'').split(',').map(a=>a.trim()).filter(Boolean); }
+function favoriteNamesOf(entry){
+  if(!entry || !entry.crit || !entry.crit.favorite) return [];
+  const f = entry.crit.favorite;
+  if(Array.isArray(f.names)) return f.names.filter(Boolean);
+  return f.name ? [f.name] : [];
+}
+function setFavoriteNames(entry, names){
+  if(!entry.crit.favorite) entry.crit.favorite = {name:'', names:[]};
+  entry.crit.favorite.names = [...new Set((names||[]).map(n=>String(n).trim()).filter(Boolean))];
+  entry.crit.favorite.name = entry.crit.favorite.names[0] || '';
+}
 function isUnlocked(id){
   if(!unlockedIds.includes(id)) return false;
   const p = data.people.find(x=>x.id===id);
@@ -454,13 +465,41 @@ async function load(){
     await persist();
   } else {
     let migrated = false;
-    data.stories.forEach(s=>{
-      if(s.author === 'Александр Т'){ s.author = 'Александр Тепиш'; migrated = true; }
-      if(!s.favoriteNames){ s.favoriteNames = []; migrated = true; }
-      if(s.favoriteNames.length && typeof s.favoriteNames[0]==='string'){
-        s.favoriteNames = s.favoriteNames.map(n=>({name:n, photo:''}));
-        migrated = true;
+    // Приводим названия и порядок к единому канону. Старые записи сохраняют id, оценки и статусы.
+    const oldStories = data.stories.slice();
+    const normalizeTitle = t => String(t||'').toLocaleLowerCase('ru-RU').replace(/ё/g,'е').replace(/[.·]/g,'').replace(/\s+/g,' ').trim();
+    const byTitle = new Map(oldStories.map(st => [normalizeTitle(st.title), st]));
+    const ordered = [];
+    STORY_ORDER.forEach(([title, author])=>{
+      const key = normalizeTitle(title);
+      const st = byTitle.get(key) || oldStories.find(x => normalizeTitle(x.title) === key);
+      if(st){
+        st.title = title;
+        if(!st.author || st.author === 'Александр Т') st.author = author;
+        if(!st.favoriteNames) st.favoriteNames = [];
+        if(st.favoriteNames.length && typeof st.favoriteNames[0]==='string'){
+          st.favoriteNames = st.favoriteNames.map(n=>({name:n, photo:''}));
+        }
+        ordered.push(st);
+      } else {
+        ordered.push({ id: uid('s'), title, author, status:'done', favoriteNames: [] });
       }
+    });
+    const canonicalKeys = new Set(STORY_ORDER.map(([title])=>normalizeTitle(title)));
+    oldStories.filter(st=>!canonicalKeys.has(normalizeTitle(st.title))).forEach(st=>ordered.push(st));
+    if(JSON.stringify(data.stories.map(x=>x.id)) !== JSON.stringify(ordered.map(x=>x.id))) migrated = true;
+    data.stories = ordered;
+    data.stories.forEach(s=>{
+      if(!s.favoriteNames) { s.favoriteNames = []; migrated = true; }
+    });
+    Object.values(data.ratings||{}).forEach(personRatings=>{
+      Object.values(personRatings||{}).forEach(r=>{
+        if(!r || !r.crit || !r.crit.favorite) return;
+        const names = favoriteNamesOf(r);
+        if(!Array.isArray(r.crit.favorite.names) || r.crit.favorite.name !== (names[0]||'')){
+          setFavoriteNames(r, names); migrated = true;
+        }
+      });
     });
     if(!data.avatarGallery){ data.avatarGallery = []; migrated = true; }
 
@@ -477,19 +516,6 @@ async function load(){
     }
 
     if(migrated) await persist();
-  }
-  // Приводим порядок историй к каноническому списку (новые/незнакомые уходят в конец, порядок между собой сохраняется).
-  {
-    const orderIndex = {};
-    STORY_ORDER.forEach(([t], i)=>{ orderIndex[t] = i; });
-    const sorted = data.stories.map((s, i)=>({ s, i })).sort((a, b)=>{
-      const ia = orderIndex.hasOwnProperty(a.s.title) ? orderIndex[a.s.title] : (STORY_ORDER.length + a.i);
-      const ib = orderIndex.hasOwnProperty(b.s.title) ? orderIndex[b.s.title] : (STORY_ORDER.length + b.i);
-      return ia - ib;
-    }).map(x=>x.s);
-    const changedOrder = sorted.some((s, i)=> s !== data.stories[i]);
-    data.stories = sorted;
-    if(changedOrder) await persist();
   }
   try{
     const sel = localStorage.getItem('kr_selected_person');
@@ -596,14 +622,14 @@ function buildCompareRows(storyId){
     const r = data.ratings[p.id] && data.ratings[p.id][storyId];
     const read = r && r.read;
     const avg = avgOf(p.id, storyId);
-    const favName = r && r.crit.favorite && r.crit.favorite.name;
+    const favNames = favoriteNamesOf(r);
     const match = currentPersonId ? favoriteMatchPercent(currentPersonId, p.id) : null;
     return `
       <div class="compare-row">
         <div class="compare-name">${escapeHtml(p.name)}${match!==null ? `<div class="match-badge">♥ ${match}%</div>` : ''}</div>
         <div class="compare-mid">
           <span class="compare-read ${read?'yes':''}">${read?'прочитано':'не читала'}</span>
-          ${favName ? `<span class="compare-fav">★ ${escapeHtml(favName)}</span>` : ''}
+          ${favNames.length ? `<span class="compare-fav">★ ${escapeHtml(favNames.join(', '))}</span>` : ''}
         </div>
         ${avg!==null ? `<div class="avg-badge" style="padding:3px 8px;"><b>${formatScore(avg)}</b><span>${overallWord(avg)}</span></div>` : `<span class="compare-none">без оценки</span>`}
       </div>`;
@@ -1010,12 +1036,26 @@ async function updateCrit(storyId, key, field, val){
   await persist();
   render();
 }
-async function updateFavName(storyId, val){
+async function toggleFavName(storyId, val){
   if(!canEdit()) return;
   const r = ensureRatings(currentPersonId, storyId);
-  r.crit.favorite.name = val;
-  await persist();
+  const current = favoriteNamesOf(r);
+  if(!val){
+    setFavoriteNames(r, []);
+  } else {
+    const next = current.includes(val) ? current.filter(n=>n!==val) : [...current, val];
+    setFavoriteNames(r, next);
+  }
+  renderList();
 }
+async function saveFavoriteSelection(storyId){
+  if(!canEdit()) return;
+  const r = ensureRatings(currentPersonId, storyId);
+  setFavoriteNames(r, favoriteNamesOf(r));
+  await persist();
+  render();
+}
+
 async function toggleEmotion(storyId, tag){
   if(!canEdit()) return;
   const r = ensureRatings(currentPersonId, storyId);
@@ -1155,8 +1195,8 @@ function personFavorites(personId){
   const out = [];
   data.stories.forEach(s=>{
     const r = data.ratings[personId] && data.ratings[personId][s.id];
-    const name = r && r.crit.favorite && r.crit.favorite.name && r.crit.favorite.name.trim();
-    if(name) out.push({ story: s, storyTitle: s.title, name });
+    const names = favoriteNamesOf(r);
+    names.forEach(name=>{ if(name) out.push({ story: s, storyTitle: s.title, name }); });
   });
   return out;
 }
@@ -1242,24 +1282,25 @@ function renderList(){
       let favAddRow = '';
       if(c.key==='favorite'){
         const chars = [...(s.favoriteNames||[])];
-        const cur = entry.name||'';
-        if(cur && !chars.find(ch=>ch.name===cur)) chars.push({name:cur, photo:''});
+        const selected = favoriteNamesOf(r);
         const editable = canEdit();
         favInput = `<div class="char-gallery">
-          <div class="char-item none ${cur===''?'selected':''} ${editable?'':'disabled'}" ${editable?`onclick="updateFavName('${s.id}','')"`:''}>
+          <div class="char-item none ${selected.length===0?'selected':''} ${editable?'':'disabled'}" ${editable?`onclick="toggleFavName('${s.id}', '')"`:''}>
             <div class="char-avatar">—</div>
             <div class="char-name">не выбран</div>
           </div>
           ${chars.map(ch=>`
-            <div class="char-item ${cur===ch.name?'selected':''} ${editable?'':'disabled'}" ${editable?`onclick="updateFavName('${s.id}', decodeURIComponent('${encodeURIComponent(ch.name)}'))"`:''}>
+            <div class="char-item ${selected.includes(ch.name)?'selected':''} ${editable?'':'disabled'}" ${editable?`onclick="toggleFavName('${s.id}', decodeURIComponent('${encodeURIComponent(ch.name)}'))"`:''}>
               <div class="char-avatar" style="${ch.photo?`background-image:url(${ch.photo});`:`background:${colorFor(ch.name)};`}">${ch.photo?'':initials(ch.name)}</div>
               <div class="char-name">${escapeHtml(ch.name)}</div>
             </div>`).join('')}
-        </div>`;
+        </div>
+        ${editable ? `<div class="fav-selection-note">Можно выбрать несколько фаворитов. Нажми «Сохранить фаворитов», чтобы записать выбор.</div>
+          <button class="filter-btn fav-save-btn" onclick="saveFavoriteSelection('${s.id}')">Сохранить фаворитов</button>` : ''}`;
         if(isCurrentAdmin()){
           favAddRow = `<div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">
             <button class="filter-btn" onclick="openAddFavForm('${s.id}')" style="margin-top:0;">+ Добавить персонажа</button>
-            ${cur ? `<button class="filter-btn fav-delete-btn" onclick="removeStoryFavorite('${s.id}', decodeURIComponent('${encodeURIComponent(cur)}'))" style="margin-top:0;color:var(--rose);border-color:rgba(194,123,151,.45);">Удалить «${escapeHtml(cur)}»</button>` : ''}
+            ${selected.length ? `<button class="filter-btn fav-delete-btn" onclick="removeStoryFavorite('${s.id}', decodeURIComponent('${encodeURIComponent(selected[0])}'))" style="margin-top:0;color:var(--rose);border-color:rgba(194,123,151,.45);">Удалить первого выбранного</button>` : ''}
           </div>`;
         }
       }
@@ -1302,7 +1343,7 @@ function renderList(){
               ${avg!==null ? `<div class="avg-badge"><b>${formatScore(avg)}</b><span>${overallWord(avg)}</span></div>` : ''}
             </div>
             <div class="meta-row">
-              ${r && r.crit.favorite.name ? favBadgeHtml(s, r.crit.favorite.name) : ''}
+              ${favoriteNamesOf(r).map(name=>favBadgeHtml(s, name)).join('')}
               ${r && r.notes ? `<div class="note-tag">${escapeHtml(r.notes)}</div>` : ''}
             </div>
           </div>
@@ -1384,10 +1425,6 @@ async function saveAddFavForm(){
   } else {
     s.favoriteNames.push({ name, photo: pendingFavPhoto || '' });
   }
-  if(currentPersonId){
-    const r = ensureRatings(currentPersonId, addFavStoryId);
-    r.crit.favorite.name = name;
-  }
   closeAddFavForm();
   await persist();
   render();
@@ -1446,7 +1483,7 @@ function renderAdmin(){
     const peopleRows = data.people.map(p=>{
       const r = data.ratings[p.id] && data.ratings[p.id][s.id];
       const pAvg = avgOf(p.id, s.id);
-      const favName = r && r.crit.favorite && r.crit.favorite.name;
+      const favNames = favoriteNamesOf(r);
       const hasContent = !!(favName || (r && r.notes) || pAvg!==null);
       return { p, r, pAvg, favName, hasContent };
     }).filter(x=>x.hasContent).map(({p, favName, r, pAvg})=>{
@@ -1458,7 +1495,7 @@ function renderAdmin(){
             <div class="compare-name">${escapeHtml(p.name)}${match!==null ? `<div class="match-badge">♥ ${match}%</div>` : ''}</div>
           </div>
           <div class="compare-mid" style="flex-direction:column;align-items:flex-start;gap:2px;">
-            ${favName ? favBadgeHtml(s, favName) : ''}
+            ${favNames.length ? favNames.map(name=>favBadgeHtml(s, name)).join('') : ''}
             ${r && r.notes ? `<div class="note-tag">${escapeHtml(r.notes)}</div>` : ''}
           </div>
           ${pAvg!==null ? `<div class="avg-badge" style="padding:3px 8px;"><b>${formatScore(pAvg)}</b><span>${overallWord(pAvg)}</span></div>` : ''}
@@ -1500,11 +1537,11 @@ function favoriteMatchPercent(personIdA, personIdB){
   data.stories.forEach(s=>{
     const ra = data.ratings[personIdA] && data.ratings[personIdA][s.id];
     const rb = data.ratings[personIdB] && data.ratings[personIdB][s.id];
-    const favA = ra && ra.crit.favorite && ra.crit.favorite.name && ra.crit.favorite.name.trim().toLowerCase();
-    const favB = rb && rb.crit.favorite && rb.crit.favorite.name && rb.crit.favorite.name.trim().toLowerCase();
-    if(favA && favB){
+    const favA = favoriteNamesOf(ra).map(n=>n.toLowerCase());
+    const favB = favoriteNamesOf(rb).map(n=>n.toLowerCase());
+    if(favA.length && favB.length){
       total++;
-      if(favA===favB) matches++;
+      if(favA.some(n=>favB.includes(n))) matches++;
     }
   });
   if(total===0) return null;
@@ -1524,7 +1561,8 @@ function openPersonStoryDetail(personId, storyId){
   const critRows = CRITERIA.map(c=>{
     const entry = (r && r.crit[c.key]) || {base:'',mod:'',name:''};
     const scoreTxt = entry.base ? entry.base + (entry.mod||'') : '—';
-    const favBit = c.key==='favorite' && entry.name ? ` — ♥ ${escapeHtml(entry.name)}` : '';
+    const favNames = c.key==='favorite' ? favoriteNamesOf(r) : [];
+    const favBit = c.key==='favorite' && favNames.length ? ` — ♥ ${escapeHtml(favNames.join(', '))}` : '';
     return `<div class="crit-row"><div class="crit-name">${c.label}</div><div style="font-family:'Manrope',sans-serif;font-size:12.5px;color:var(--text);">${scoreTxt}${favBit}</div></div>`;
   }).join('');
 
