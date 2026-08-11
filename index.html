@@ -489,22 +489,38 @@ function normalizeStoryTitleForMatch(title){
 }
 
 // Восстанавливает целостность каталога после неудачного перетаскивания:
-// - одинаковая история не может существовать дважды;
-// - если одна из 58 базовых историй пропала, она добавляется обратно;
-// - пользовательские переименования не перезаписываются.
+// - одинаковый id истории не может существовать дважды;
+// - дубликаты одной из базовых историй объединяются;
+// - ВАЖНО: отсутствующую историю НЕ добавляем автоматически.
+//   Если админ её удалил, удаление должно сохраняться.
 function repairStoryCatalog(){
   let changed = false;
   const kept = [];
+  const byId = new Map();
   const byKey = new Map();
 
   for(const story of (data.stories||[])){
+    if(!story || !story.id) continue;
+
+    // Главная защита от бага перетаскивания: один id = одна карточка.
+    if(byId.has(story.id)){
+      const keep = byId.get(story.id);
+      Object.keys(data.ratings||{}).forEach(pid=>{
+        const pr = data.ratings[pid] || {};
+        if(pr[story.id] && !pr[keep.id]) pr[keep.id] = pr[story.id];
+      });
+      changed = true;
+      continue;
+    }
+
     const key = normalizeStoryTitleForMatch(story.title);
     const canonical = STORY_ORDER.find(([title])=>normalizeStoryTitleForMatch(title)===key);
     if(canonical && byKey.has(key)){
       const keep = byKey.get(key);
-      // Сливаем рейтинги дубликата в сохранённую запись, не затирая уже имеющиеся.
       Object.keys(data.ratings||{}).forEach(pid=>{
         const pr = data.ratings[pid] || {};
+        // Если это разные записи с одинаковым названием, переносим рейтинг
+        // только если у сохранённой записи его ещё нет.
         if(pr[story.id]){
           if(!pr[keep.id]) pr[keep.id] = pr[story.id];
           delete pr[story.id];
@@ -519,23 +535,28 @@ function repairStoryCatalog(){
       changed = true;
       continue;
     }
+
     kept.push(story);
+    byId.set(story.id, story);
     if(canonical) byKey.set(key, story);
   }
 
+  if(kept.length !== (data.stories||[]).length) changed = true;
   data.stories = kept;
-
-  // Добавляем только те базовые истории, которых действительно нет.
-  for(const [title, author] of STORY_ORDER){
-    const key = normalizeStoryTitleForMatch(title);
-    if(!byKey.has(key)){
-      const fresh = {id:uid('s'), title, author, status:'done', favoriteNames:[], extraFavoriteCriteria:[]};
-      data.stories.push(fresh);
-      byKey.set(key, fresh);
-      changed = true;
-    }
-  }
   return changed;
+}
+
+// Жёсткая нормализация перед сохранением. Она не меняет порядок и не
+// добавляет новые истории — только не даёт случайному дублю попасть в БД.
+function normalizeStoriesForSave(){
+  const seen = new Set();
+  const out = [];
+  for(const story of (data.stories||[])){
+    if(!story || !story.id || seen.has(story.id)) continue;
+    seen.add(story.id);
+    out.push(story);
+  }
+  data.stories = out;
 }
 
 async function load(){
@@ -555,8 +576,8 @@ async function load(){
     // ВАЖНО: не пересобираем список историй при каждом запуске.
     // Администратор может переименовать или удалить историю — эти изменения должны сохраняться.
     // Порядок, установленный ранее, просто сохраняем. Новые истории добавляются через push() в конец.
-    if(data.storyOrderVersion !== 2){
-      data.storyOrderVersion = 2;
+    if(data.storyOrderVersion !== 3){
+      data.storyOrderVersion = 3;
       migrated = true;
     }
     // Одноразово очищаем тестовые дополнительные строки, которые были
@@ -639,6 +660,7 @@ async function load(){
 let saveFailed = false;
 let retryTimer = null;
 async function persist(){
+  normalizeStoriesForSave();
   try{
     await kvSet('kr_data', JSON.stringify(data));
     saveFailed = false;
@@ -1607,17 +1629,23 @@ function setupStoryReorder(){
       list.querySelectorAll('.story.drag-over').forEach(x=>x.classList.remove('drag-over'));
       try{ card.releasePointerCapture(e.pointerId); }catch(_){}
       if(st.moved){
-        const ids=[...new Set([...list.querySelectorAll('.story[data-story-id]')].map(x=>x.dataset.storyId))];
+        // Считываем порядок только по уникальным id карточек, которые реально
+        // находятся на экране. Никаких push/clone — только перестановка ссылок.
+        normalizeStoriesForSave();
+        const ids=[];
+        const seen=new Set();
+        list.querySelectorAll('.story[data-story-id]').forEach(el=>{
+          const id=el.dataset.storyId;
+          if(id && !seen.has(id)){ seen.add(id); ids.push(id); }
+        });
+
         const visibleSet=new Set(ids);
-        const uniqueStories=[];
-        const seenIds=new Set();
-        data.stories.forEach(x=>{ if(!seenIds.has(x.id)){ seenIds.add(x.id); uniqueStories.push(x); } });
-        data.stories=uniqueStories;
-        const orderedVisible=data.stories.filter(x=>visibleSet.has(x.id));
-        const byId=new Map(orderedVisible.map(x=>[x.id,x]));
+        const byId=new Map(data.stories.map(x=>[x.id,x]));
         const reordered=ids.map(id=>byId.get(id)).filter(Boolean);
         let pos=0;
-        data.stories=data.stories.map(x=>visibleSet.has(x.id)?reordered[pos++]:x);
+        data.stories=data.stories.map(x=>visibleSet.has(x.id) ? reordered[pos++] : x);
+
+        normalizeStoriesForSave();
         await persist();
         renderList();
       }
