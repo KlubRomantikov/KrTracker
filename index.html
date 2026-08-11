@@ -391,6 +391,9 @@ const AVATAR_COLORS = ['#8a5fb0','#b0607a','#5f7fb0','#7a9d6a','#b08a4a','#9c5f8
 let data = { stories: [], people: [], ratings: {} };
 let currentPersonId = null;
 let unlockedIds = [];
+// Админский режим можно временно выключить: профиль при этом остаётся обычным
+// разблокированным профилем и продолжает работать как пользовательский.
+let adminModeEnabled = localStorage.getItem('kr_admin_mode') !== 'off';
 let filterMode = 'all';
 let sortByRating = false;
 let searchTerm = '';
@@ -739,7 +742,14 @@ function avgOf(personId, storyId){
 }
 function isCurrentAdmin(){
   const p = data.people.find(x=>x.id===currentPersonId);
-  return !!(p && p.isAdmin && isUnlocked(p.id));
+  return !!(p && p.isAdmin && isUnlocked(p.id) && adminModeEnabled);
+}
+function toggleAdminMode(){
+  const p = data.people.find(x=>x.id===currentPersonId);
+  if(!p || !p.isAdmin || !isUnlocked(p.id)) return;
+  adminModeEnabled = !adminModeEnabled;
+  localStorage.setItem('kr_admin_mode', adminModeEnabled ? 'on' : 'off');
+  render();
 }
 function buildCompareRows(storyId){
   const others = data.people.filter(p=>p.id!==currentPersonId);
@@ -1309,9 +1319,13 @@ function renderStats(){
   if(currentPersonId && isUnlocked(currentPersonId)){
     const p = data.people.find(x=>x.id===currentPersonId);
     lockRow.style.display = 'flex';
-    lockRow.innerHTML = `<span>Разблокирован(а) на этом устройстве: <b style="color:var(--gold);">${p?escapeHtml(p.name):''}</b></span><button class="filter-btn" id="changeAvatarBtn">Сменить аватар</button><button class="filter-btn" id="lockProfileBtn">Заблокировать профиль</button>`;
+    const adminModeBtn = p && p.isAdmin
+      ? `<button class="filter-btn" id="adminModeBtn" title="Включает или выключает только админские функции">Админ-функции: ${adminModeEnabled?'ВКЛ':'ВЫКЛ'}</button>`
+      : '';
+    lockRow.innerHTML = `<span>Разблокирован(а) на этом устройстве: <b style="color:var(--gold);">${p?escapeHtml(p.name):''}</b></span><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end;">${adminModeBtn}<button class="filter-btn" id="changeAvatarBtn">Сменить аватар</button><button class="filter-btn" id="lockProfileBtn">Заблокировать профиль</button></div>`;
     document.getElementById('lockProfileBtn').addEventListener('click', lockCurrentProfile);
     document.getElementById('changeAvatarBtn').addEventListener('click', toggleChangeAvatarPanel);
+    if(adminModeBtn) document.getElementById('adminModeBtn').addEventListener('click', toggleAdminMode);
   } else {
     lockRow.style.display = 'none';
     lockRow.innerHTML = '';
