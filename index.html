@@ -1906,9 +1906,9 @@ function renderAdmin(){
       const r = data.ratings[p.id] && data.ratings[p.id][s.id];
       const pAvg = avgOf(p.id, s.id);
       const favNames = favoriteNamesOf(r);
-      const hasContent = !!(favName || (r && r.notes) || pAvg!==null);
-      return { p, r, pAvg, favName, hasContent };
-    }).filter(x=>x.hasContent).map(({p, favName, r, pAvg})=>{
+      const hasContent = !!(favNames.length || (r && r.notes) || pAvg!==null);
+      return { p, r, pAvg, favNames, hasContent };
+    }).filter(x=>x.hasContent).map(({p, favNames, r, pAvg})=>{
       const match = (currentPersonId && p.id!==currentPersonId) ? favoriteMatchPercent(currentPersonId, p.id) : null;
       return `
         <div class="compare-row" style="cursor:pointer;" onclick="openPersonStoryDetail('${p.id}','${s.id}')">
