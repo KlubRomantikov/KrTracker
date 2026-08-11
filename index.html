@@ -465,32 +465,19 @@ async function load(){
     await persist();
   } else {
     let migrated = false;
-    // Приводим названия и порядок к единому канону. Старые записи сохраняют id, оценки и статусы.
-    const oldStories = data.stories.slice();
-    const normalizeTitle = t => String(t||'').toLocaleLowerCase('ru-RU').replace(/ё/g,'е').replace(/[.·]/g,'').replace(/\s+/g,' ').trim();
-    const byTitle = new Map(oldStories.map(st => [normalizeTitle(st.title), st]));
-    const ordered = [];
-    STORY_ORDER.forEach(([title, author])=>{
-      const key = normalizeTitle(title);
-      const st = byTitle.get(key) || oldStories.find(x => normalizeTitle(x.title) === key);
-      if(st){
-        st.title = title;
-        if(!st.author || st.author === 'Александр Т') st.author = author;
-        if(!st.favoriteNames) st.favoriteNames = [];
-        if(st.favoriteNames.length && typeof st.favoriteNames[0]==='string'){
-          st.favoriteNames = st.favoriteNames.map(n=>({name:n, photo:''}));
-        }
-        ordered.push(st);
-      } else {
-        ordered.push({ id: uid('s'), title, author, status:'done', favoriteNames: [] });
-      }
-    });
-    const canonicalKeys = new Set(STORY_ORDER.map(([title])=>normalizeTitle(title)));
-    oldStories.filter(st=>!canonicalKeys.has(normalizeTitle(st.title))).forEach(st=>ordered.push(st));
-    if(JSON.stringify(data.stories.map(x=>x.id)) !== JSON.stringify(ordered.map(x=>x.id))) migrated = true;
-    data.stories = ordered;
+    // ВАЖНО: не пересобираем список историй при каждом запуске.
+    // Администратор может переименовать или удалить историю — эти изменения должны сохраняться.
+    // Порядок, установленный ранее, просто сохраняем. Новые истории добавляются через push() в конец.
+    if(data.storyOrderVersion !== 2){
+      data.storyOrderVersion = 2;
+      migrated = true;
+    }
     data.stories.forEach(s=>{
       if(!s.favoriteNames) { s.favoriteNames = []; migrated = true; }
+      if(s.favoriteNames.length && typeof s.favoriteNames[0]==='string'){
+        s.favoriteNames = s.favoriteNames.map(n=>({name:n, photo:''}));
+        migrated = true;
+      }
     });
     Object.values(data.ratings||{}).forEach(personRatings=>{
       Object.values(personRatings||{}).forEach(r=>{
@@ -1046,14 +1033,8 @@ async function toggleFavName(storyId, val){
     const next = current.includes(val) ? current.filter(n=>n!==val) : [...current, val];
     setFavoriteNames(r, next);
   }
-  renderList();
-}
-async function saveFavoriteSelection(storyId){
-  if(!canEdit()) return;
-  const r = ensureRatings(currentPersonId, storyId);
-  setFavoriteNames(r, favoriteNamesOf(r));
   await persist();
-  render();
+  renderList();
 }
 
 async function toggleEmotion(storyId, tag){
@@ -1295,8 +1276,7 @@ function renderList(){
               <div class="char-name">${escapeHtml(ch.name)}</div>
             </div>`).join('')}
         </div>
-        ${editable ? `<div class="fav-selection-note">Можно выбрать несколько фаворитов. Нажми «Сохранить фаворитов», чтобы записать выбор.</div>
-          <button class="filter-btn fav-save-btn" onclick="saveFavoriteSelection('${s.id}')">Сохранить фаворитов</button>` : ''}`;
+        ${editable ? `<div class="fav-selection-note">Можно выбрать несколько фаворитов. Нажми один раз — выбрать, нажми ещё раз — снять выбор.</div>` : ''}`;
         if(isCurrentAdmin()){
           favAddRow = `<div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">
             <button class="filter-btn" onclick="openAddFavForm('${s.id}')" style="margin-top:0;">+ Добавить персонажа</button>
