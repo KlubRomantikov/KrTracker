@@ -7,6 +7,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Marcellus&family=Inter:wght@400;500;600;700&family=Manrope:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
+  /* Не показываем основной экран до определения сохранённого экрана — убирает визуальный скачок при открытии. */
+  html.start-admin #mainView{display:none !important;}
+  html.start-admin #adminView{display:block !important;}
   :root{
     --bg-0:#100b1c;
     --bg-1:#1b1430;
@@ -99,12 +102,67 @@
 
   /* shelf */
   .shelf-label{display:flex;justify-content:space-between;font-family:'Manrope',sans-serif;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--text-dim);margin-bottom:10px;}
-  .shelf{position:relative;display:flex;align-items:flex-end;gap:3px;min-height:70px;padding:0 4px 12px;overflow-x:auto;scrollbar-width:none;margin-bottom:22px;}
+  .shelf-wrap{position:relative;margin-bottom:22px;}
+  .shelf{position:relative;display:flex;align-items:flex-end;gap:5px;min-height:194px;padding:0 8px 14px;overflow-x:auto;scrollbar-width:none;margin-bottom:0;overscroll-behavior-x:contain;scroll-snap-type:x proximity;}
   .shelf::-webkit-scrollbar{display:none;}
-  .shelf-board{position:absolute;left:0;right:0;bottom:0;height:2px;background:linear-gradient(90deg, transparent, var(--gold), transparent);box-shadow:0 0 12px 1px var(--gold-soft);}
-  .spine{flex:0 0 auto;width:7px;border-radius:2px 2px 0 0;position:relative;z-index:1;cursor:pointer;}
-  .spine.unread{background:rgba(236,230,245,0.08);}
+  .shelf-board{position:absolute;left:0;right:0;bottom:0;height:3px;background:linear-gradient(90deg, transparent, var(--gold), transparent);box-shadow:0 0 12px 1px var(--gold-soft);z-index:3;pointer-events:none;}
+  .spine{flex:0 0 auto;width:44px;min-width:44px;border-radius:5px 5px 2px 2px;position:relative;z-index:1;cursor:pointer;box-sizing:border-box;box-shadow:inset 1px 0 rgba(255,255,255,.18),inset -1px 0 rgba(0,0,0,.16),0 -1px 0 rgba(255,255,255,.08);transition:transform .16s ease,filter .16s ease;scroll-snap-align:start;overflow:hidden;}
+  .spine:hover{transform:translateY(-4px);filter:brightness(1.08);}
+  .spine::before,.spine::after{content:'';position:absolute;left:5px;right:5px;height:2px;border-top:1px solid rgba(255,255,255,.22);border-bottom:1px solid rgba(0,0,0,.14);opacity:.8;}
+  .spine::before{top:7px;}
+  .spine::after{bottom:7px;}
+  .spine-title{position:absolute;inset:15px 5px;display:flex;align-items:center;justify-content:center;color:rgba(255,248,239,.96);font-family:'Cormorant Garamond',serif;font-size:10px;font-weight:600;line-height:1.08;letter-spacing:.01em;writing-mode:vertical-rl;transform:rotate(180deg);text-align:left;overflow:hidden;white-space:normal;word-break:break-word;text-shadow:0 1px 2px rgba(0,0,0,.35);pointer-events:none;}
+  .spine.unread{box-shadow:inset 1px 0 rgba(255,255,255,.12),inset -1px 0 rgba(0,0,0,.14);}
+  .spine.unread .spine-title{color:rgba(255,248,239,.96);}
+  .spine.done{background:var(--gold);}
+  .spine.ongoing{background:var(--mint);}
+  .spine.done .spine-title,.spine.ongoing .spine-title{color:#24182e;text-shadow:none;}
+  .emo-chip.good{color:#7fce8f;border-color:rgba(127,206,143,.42);background:rgba(127,206,143,.10);}
+  .emo-chip.neutral{color:#ece6f5;border-color:rgba(236,230,245,.38);background:rgba(236,230,245,.08);}
+  .emo-chip.bad{color:#d07d9a;border-color:rgba(208,125,154,.42);background:rgba(208,125,154,.10);}
+  .emo-chip.good.on{color:#17231a;border-color:#7fce8f;background:#7fce8f;}
+  .emo-chip.neutral.on{color:#1b1430;border-color:#ece6f5;background:#ece6f5;}
+  .emo-chip.bad.on{color:#24182e;border-color:#d07d9a;background:#d07d9a;}
+  .shelf-scroll-hint{position:absolute;right:8px;bottom:18px;z-index:5;display:flex;align-items:center;gap:5px;padding:5px 9px;border:1px solid rgba(205,168,106,.45);border-radius:999px;background:rgba(22,15,37,.9);color:var(--gold);font-family:'Manrope',sans-serif;font-size:10px;letter-spacing:.03em;box-shadow:0 5px 16px rgba(0,0,0,.28);pointer-events:none;animation:shelfHintPulse 2.2s ease-in-out infinite;}
+  .shelf-scroll-hint .arrows{font-size:15px;line-height:1;letter-spacing:-3px;}
+  .shelf-scroll-hint.hidden{display:none;}
+  .shelf-wrap.scrolled .shelf-scroll-hint{opacity:.28;animation:none;}
+  @keyframes shelfHintPulse{0%,100%{opacity:.72;transform:translateX(0)}50%{opacity:1;transform:translateX(-3px)}}
   .shelf-empty{font-size:12.5px;color:var(--text-dim);font-style:italic;padding:14px 4px;}
+  .story-info-backdrop{position:fixed;inset:0;background:rgba(8,5,15,.68);backdrop-filter:blur(2px);z-index:90;display:none;align-items:center;justify-content:center;padding:16px;}
+  .story-info-backdrop.show{display:flex;animation:storyFadeIn .18s ease both;}
+  .story-info-modal{width:min(680px,100%);max-height:min(82vh,720px);overflow:auto;background:linear-gradient(180deg,#261b38,#171021);border:1px solid rgba(205,168,106,.42);border-radius:16px;box-shadow:0 20px 70px rgba(0,0,0,.58);position:relative;transform-origin:center bottom;animation:storyModalIn .24s cubic-bezier(.2,.8,.2,1) both;}
+  .story-info-close{position:absolute;right:10px;top:10px;width:32px;height:32px;border:1px solid rgba(236,230,245,.14);border-radius:50%;background:rgba(16,11,28,.7);color:var(--text-dim);font-size:18px;cursor:pointer;z-index:3;}
+  .story-info-close:hover{color:var(--gold);border-color:var(--gold-soft);}
+  .story-info-top{display:grid;grid-template-columns:150px 1fr;gap:18px;padding:18px 18px 14px;}
+  .story-info-cover{width:150px;height:210px;border-radius:9px;border:1px solid rgba(205,168,106,.32);background:linear-gradient(145deg,#392650,#171021);background-size:cover;background-position:center;display:flex;align-items:center;justify-content:center;color:rgba(205,168,106,.7);font-family:'Marcellus',serif;font-size:22px;box-shadow:0 8px 22px rgba(0,0,0,.3);overflow:hidden;}
+  .story-info-kicker{font-family:'Manrope',sans-serif;font-size:9px;text-transform:uppercase;letter-spacing:.12em;color:var(--gold);margin:3px 0 7px;}
+  .story-info-title{font-family:'Marcellus',serif;font-size:24px;line-height:1.12;color:var(--text);margin-bottom:5px;padding-right:30px;}
+  .story-info-author{font-size:12px;color:var(--text-dim);margin-bottom:10px;}
+  .story-info-genres{display:flex;gap:5px;flex-wrap:wrap;}
+  .story-info-genre{font-size:9.5px;color:var(--gold);border:1px solid rgba(205,168,106,.3);background:rgba(205,168,106,.07);padding:4px 7px;border-radius:999px;}
+  .story-info-section{padding:0 18px 12px;}
+  .story-info-label{font-family:'Manrope',sans-serif;font-size:9px;text-transform:uppercase;letter-spacing:.09em;color:var(--gold);margin-bottom:7px;}
+  .story-info-description{font-size:12.5px;line-height:1.55;color:var(--text);white-space:pre-line;}
+  .story-info-people{border-top:1px solid var(--line);padding-top:13px;}
+  .story-info-person{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:4px 0;border-bottom:1px solid rgba(236,230,245,.06);font-size:11px;}
+  .story-info-person:last-child{border-bottom:0;}
+  .story-info-person-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .story-info-status{font-family:'Manrope',sans-serif;font-size:9.5px;white-space:nowrap;padding:4px 7px;border-radius:999px;background:rgba(159,214,201,.08);color:var(--mint);border:1px solid rgba(159,214,201,.2);}
+  .story-info-status.read{color:var(--gold);background:rgba(205,168,106,.08);border-color:rgba(205,168,106,.2);}
+  .story-info-empty{font-size:11.5px;color:var(--text-dim);font-style:italic;}
+  .story-info-admin{border-top:1px solid var(--line);padding:14px 18px 18px;}
+  .story-info-admin-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+  .story-info-admin textarea,.story-info-admin input{width:100%;padding:8px 9px;border:1px solid var(--line);background:var(--bg-1);color:var(--text);border-radius:7px;font:12px 'Inter',sans-serif;}
+  .story-info-admin textarea{min-height:76px;resize:vertical;grid-column:1/-1;}
+  .story-cover-upload{display:flex;align-items:center;gap:9px;grid-column:1/-1;}
+  .story-cover-preview{width:48px;height:68px;border-radius:6px;border:1px dashed var(--text-dim);background:var(--bg-1);background-size:cover;background-position:center;display:flex;align-items:center;justify-content:center;color:var(--text-dim);font-size:18px;flex:0 0 auto;}
+  .story-cover-upload .file-btn{margin:0;}
+  .story-info-admin .admin-save-note{font-size:9.5px;color:var(--text-dim);margin-top:6px;}
+  @keyframes storyFadeIn{from{opacity:0}to{opacity:1}}
+  @keyframes storyModalIn{from{opacity:0;transform:translateY(12px) scale(.985)}to{opacity:1;transform:none}}
+  @media(max-width:560px){.story-info-top{grid-template-columns:120px 1fr;gap:12px}.story-info-cover{width:120px;height:170px}.story-info-title{font-size:20px}.story-info-admin-grid{grid-template-columns:1fr}.story-info-admin textarea{grid-column:auto}}
+
 
   .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:10px;overflow:hidden;margin-bottom:18px;}
   .stat{background:var(--card);padding:12px 8px;text-align:center;}
@@ -175,6 +233,8 @@
 
   .title-edit-row{display:flex;gap:8px;margin-bottom:10px;}
   .title-edit-row input{flex:1;padding:7px 9px;border:1px solid var(--line);background:var(--bg-1);color:var(--text);border-radius:6px;font-size:12.5px;font-family:'Inter',sans-serif;}
+  .profile-panel input{background:var(--bg-1) !important;color:var(--text) !important;border:1px solid var(--line) !important;border-radius:8px;font-family:'Inter',sans-serif;font-size:12.5px;}
+  .profile-panel input::placeholder{color:var(--text-dim);opacity:1;}
 
   .crit-grid{display:flex;flex-direction:column;gap:9px;}
   .crit-row{display:flex;align-items:center;gap:8px;}
@@ -188,6 +248,20 @@
   .author-opinion-name{font-family:'Manrope',sans-serif;font-size:11.5px;color:var(--text);margin-bottom:6px;font-weight:600;}
   .author-ratings-toggle{width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;background:transparent;border:0;color:var(--text);font-family:'Manrope',sans-serif;font-size:13px;font-weight:700;text-align:left;padding:2px 0;cursor:pointer;}
   .author-ratings-chevron{font-size:16px;color:var(--gold);line-height:1;}
+  .profile-panel{background:var(--card);border:1px solid rgba(205,168,106,0.3);border-radius:10px;padding:12px 14px;margin-bottom:16px;}
+  .profile-panel-toggle{width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;background:transparent;border:0;color:var(--text);font-family:'Manrope',sans-serif;font-size:13px;font-weight:700;text-align:left;padding:2px 0;cursor:pointer;}
+  .profile-panel-chevron{font-size:16px;color:var(--gold);line-height:1;}
+  .profile-panel-body{margin-top:10px;}
+  .profile-summary-row{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:8px;padding:7px 9px;background:var(--bg-1);margin-bottom:6px;min-width:0;}
+  .profile-summary-main{flex:1;min-width:0;}
+  .profile-summary-title{font-family:'Manrope',sans-serif;font-size:11.5px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .profile-summary-sub{font-size:10px;color:var(--text-dim);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .profile-summary-score{font-family:'Manrope',sans-serif;font-size:11px;font-weight:700;color:var(--gold);white-space:nowrap;}
+  .profile-summary-note{font-size:10px;color:var(--text-dim);font-style:italic;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .profile-match{font-family:'Manrope',sans-serif;font-size:11.5px;color:var(--rose);margin-bottom:8px;}
+  .profile-fav-wrap{display:flex;flex-wrap:wrap;gap:6px;}
+  .profile-fav-story{font-size:9.5px;color:var(--text-dim);margin-left:2px;}
+
 
   .fav-name{flex:1;min-width:90px;padding:5px 8px;border:1px solid var(--line);background:var(--bg-1);color:var(--text);font-size:12px;border-radius:6px;font-family:'Inter',sans-serif;}
   .notes-wrap{margin-top:12px;}
@@ -204,7 +278,23 @@
   .empty-state{text-align:center;padding:36px 20px;color:var(--text-dim);font-style:italic;font-size:13.5px;}
 </style>
 </head>
+<script>
+  // Определяем стартовый экран до первой отрисовки страницы, чтобы профиль
+  // не успевал появиться перед Общим рейтингом.
+  try {
+    if(localStorage.getItem('kr_last_view') !== 'main'){
+      document.documentElement.classList.add('start-admin');
+    }
+  } catch(e) {}
+</script>
 <body>
+  <div class="story-info-backdrop" id="storyInfoBackdrop" role="dialog" aria-modal="true" aria-hidden="true">
+    <div class="story-info-modal" id="storyInfoModal">
+      <button class="story-info-close" type="button" onclick="closeStoryInfo()" aria-label="Закрыть">×</button>
+      <div id="storyInfoContent"></div>
+    </div>
+  </div>
+
 <div class="wrap" id="mainView">
   <div id="saveBanner" class="save-banner" style="display:none;">
     <span>Не удалось сохранить последние изменения — пробуем снова автоматически.</span>
@@ -249,9 +339,6 @@
     </div>
   </div>
 
-  <div class="shelf-label"><span>Полка</span><span id="shelfCount">0 историй</span></div>
-  <div class="shelf" id="shelf"><div class="shelf-board"></div></div>
-
   <div class="stats" id="stats"></div>
 
   <div id="noPersonNote" class="login-callout" style="display:none;">
@@ -267,6 +354,8 @@
   </div>
   <div id="lockedStatusRow" style="display:none;align-items:center;justify-content:space-between;gap:10px;font-family:'Manrope',sans-serif;font-size:11.5px;color:var(--text-dim);margin-bottom:14px;flex-wrap:wrap;"></div>
   <div id="authorRatingsPanel" style="display:none;margin-bottom:16px;"></div>
+  <div id="storyOpinionsPanel" style="display:none;margin-bottom:16px;"></div>
+  <div id="profileFavoritesPanel" style="display:none;margin-bottom:16px;"></div>
   <div id="changeAvatarPanel" style="display:none;margin-bottom:14px;">
     <div id="changeAvatarGrid" class="avatar-gallery"></div>
   </div>
@@ -289,6 +378,13 @@
   <div class="eyebrow">Свод мнений</div>
   <h1 style="font-size:26px;">Общий рейтинг</h1>
   <p class="sub" id="ratingSub">Средний балл по всем, кто успел оценить.</p>
+
+  <div class="shelf-label"><span>Полка</span><span id="shelfCount">0 историй</span></div>
+  <div class="shelf-wrap" id="shelfWrap">
+    <div class="shelf" id="shelf"><div class="shelf-board"></div></div>
+    <div class="shelf-scroll-hint" aria-hidden="true"><span class="arrows">↔</span><span>листать</span></div>
+  </div>
+
   <div class="filters" style="margin-bottom:16px;">
     <button class="filter-btn" id="tabStories">Истории</button>
     <button class="filter-btn" id="tabAuthors">Авторы</button>
@@ -309,7 +405,17 @@ const CRITERIA = [
   {key:'intimacy', label:'Описание интима'},
   {key:'overall', label:'Общее впечатление'}
 ];
-const EMOTION_TAGS = ['Восторг','Умиление','Веселье','Увлечённость','Предвкушение','Равнодушие','Удивление','Волнение','Скука','Разочарование','Грусть','Раздражение'];
+const EMOTION_TAGS = ['Восторг','Умиление','Веселье','Увлечённость','Предвкушение','Разъёб','Равнодушие','Удивление','Волнение','Неопределённость','Незавершённость','Скука','Разочарование','Грусть','Раздражение','Кринж','Стыд'];
+const EMOTION_TONES = {
+  good: new Set(['Восторг','Умиление','Веселье','Увлечённость','Предвкушение','Разъёб']),
+  neutral: new Set(['Равнодушие','Удивление','Волнение','Неопределённость','Незавершённость']),
+  bad: new Set(['Скука','Разочарование','Грусть','Раздражение','Кринж','Стыд'])
+};
+function emotionTone(tag){
+  if(EMOTION_TONES.good.has(tag)) return 'good';
+  if(EMOTION_TONES.neutral.has(tag)) return 'neutral';
+  return 'bad';
+}
 const OVERALL_SCALE = ['Ужасно','Плохо','Норм','Хорошо','Отлично'];
 
 function roundTo1(v){ return Math.round(v*10)/10; }
@@ -394,6 +500,7 @@ const AVATAR_COLORS = ['#8a5fb0','#b0607a','#5f7fb0','#7a9d6a','#b08a4a','#9c5f8
 
 let data = { stories: [], people: [], ratings: {} };
 let currentPersonId = null;
+let viewerPersonId = null;
 let unlockedIds = [];
 // Админский режим можно временно выключить: профиль при этом остаётся обычным
 // разблокированным профилем и продолжает работать как пользовательский.
@@ -460,8 +567,17 @@ function isUnlocked(id){
   const p = data.people.find(x=>x.id===id);
   return !!(p && p.pin);
 }
-function canEdit(){ return !!currentPersonId && isUnlocked(currentPersonId); }
-function isViewingOwnProfile(){ return !!currentPersonId && isUnlocked(currentPersonId); }
+function canEdit(){ return !!currentPersonId && currentPersonId===viewerPersonId && isUnlocked(currentPersonId); }
+function isViewingOwnProfile(){ return !!currentPersonId && currentPersonId===viewerPersonId && isUnlocked(currentPersonId); }
+function isViewingOtherProfile(){ return !!currentPersonId && currentPersonId!==viewerPersonId; }
+function currentViewerId(){
+  if(viewerPersonId && data.people.some(p=>p.id===viewerPersonId) && isUnlocked(viewerPersonId)) return viewerPersonId;
+  return null;
+}
+function jsString(value){
+  // Safe JS string for inline handlers, including apostrophes/quotes/newlines in edited names.
+  return escapeHtml(JSON.stringify(String(value ?? '')));
+}
 
 /* ---------- Supabase key-value storage ---------- */
 const SUPABASE_URL = 'https://knlblyrztrwqnoihdpmy.supabase.co';
@@ -475,10 +591,23 @@ async function kvGet(key){
   return rows.length ? rows[0].value : null;
 }
 async function kvSet(key, value){
-  await fetch(`${SUPABASE_URL}/rest/v1/kr_data?key=eq.${encodeURIComponent(key)}`, {
-    method: 'DELETE',
-    headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+  // Обычно обновляем существующую запись одним запросом вместо DELETE + POST.
+  // Это заметно уменьшает задержку после редактирования.
+  const patch = await fetch(`${SUPABASE_URL}/rest/v1/kr_data?key=eq.${encodeURIComponent(key)}`, {
+    method: 'PATCH',
+    headers: {
+      'apikey': SUPABASE_KEY,
+      'Authorization': `Bearer ${SUPABASE_KEY}`,
+      'Content-Type': 'application/json',
+      'Prefer': 'return=representation'
+    },
+    body: JSON.stringify({ value })
   });
+  if(!patch.ok) throw new Error('kv patch failed: '+patch.status);
+  const rows = await patch.json();
+  if(Array.isArray(rows) && rows.length) return;
+
+  // Первый запуск / пустая таблица: создаём запись.
   const res = await fetch(`${SUPABASE_URL}/rest/v1/kr_data`, {
     method: 'POST',
     headers: {
@@ -572,10 +701,27 @@ function normalizeStoriesForSave(){
 }
 
 async function load(){
+  // Instant first paint from the last known snapshot; Supabase refreshes it in the background.
   let loaded = false;
   try{
+    const cached = localStorage.getItem('kr_data_cache');
+    if(cached){ data = JSON.parse(cached); loaded = !!(data && data.stories); }
+  }catch(e){ loaded=false; }
+  try{
+    const sel = localStorage.getItem('kr_selected_person');
+    if(sel) currentPersonId = sel;
+    const unl = localStorage.getItem('kr_unlocked');
+    if(unl) unlockedIds = JSON.parse(unl);
+    const viewer = localStorage.getItem('kr_viewer_person');
+    if(viewer) viewerPersonId = viewer;
+  }catch(e){}
+  if(loaded){
+    if(!viewerPersonId && currentPersonId && isUnlocked(currentPersonId)) viewerPersonId=currentPersonId;
+    render();
+  }
+  try{
     const val = await kvGet('kr_data');
-    if(val){ data = JSON.parse(val); loaded = true; }
+    if(val){ data = JSON.parse(val); loaded = true; try{ localStorage.setItem('kr_data_cache', JSON.stringify(data)); }catch(e){} }
   }catch(e){ console.error('load kr_data error', e); loaded = false; }
   if(!loaded || !data.stories || data.stories.length===0){
     data = { stories: [], people: [], ratings: {}, avatarGallery: [] };
@@ -611,6 +757,9 @@ async function load(){
     }
     data.stories.forEach(s=>{
       if(!s.favoriteNames) { s.favoriteNames = []; migrated = true; }
+      if(typeof s.description !== 'string') { s.description = ''; migrated = true; }
+      if(!Array.isArray(s.genres)) { s.genres = []; migrated = true; }
+      if(typeof s.cover !== 'string') { s.cover = ''; migrated = true; }
       if(!Array.isArray(s.extraFavoriteCriteria)) { s.extraFavoriteCriteria = []; migrated = true; }
       s.extraFavoriteCriteria.forEach(c=>{
         if(c.label !== 'Фаворит') { c.label = 'Фаворит'; migrated = true; }
@@ -662,14 +811,7 @@ async function load(){
 
     if(migrated) await persist();
   }
-  try{
-    const sel = localStorage.getItem('kr_selected_person');
-    if(sel) currentPersonId = sel;
-  }catch(e){}
-  try{
-    const unl = localStorage.getItem('kr_unlocked');
-    if(unl) unlockedIds = JSON.parse(unl);
-  }catch(e){}
+  if(!viewerPersonId && currentPersonId && isUnlocked(currentPersonId)) viewerPersonId = currentPersonId;
   render();
   // При первом запуске открываем общий рейтинг.
   // После этого сохраняем и восстанавливаем последний открытый экран.
@@ -693,9 +835,11 @@ async function persist(){
   try{
     await kvSet('kr_data', JSON.stringify(data));
     saveFailed = false;
+    try{ localStorage.setItem('kr_data_cache', JSON.stringify(data)); }catch(e){}
     if(retryTimer){ clearTimeout(retryTimer); retryTimer = null; }
   } catch(e){
     console.error('storage error', e);
+    try{ localStorage.setItem('kr_data_cache', JSON.stringify(data)); }catch(e){}
     saveFailed = true;
     if(!retryTimer){
       retryTimer = setTimeout(()=>{ retryTimer = null; persist(); }, 4000);
@@ -752,8 +896,8 @@ async function updateAuthorField(authorName, field, val){
   if(!canEdit()) return;
   const a = ensureAuthorRating(currentPersonId, authorName);
   a[field] = val;
-  await persist();
-  render();
+  renderAuthorRatingsPanel();
+  schedulePersist();
 }
 function scoreOf(entry){
   if(!entry || !entry.base) return null;
@@ -1073,6 +1217,8 @@ document.getElementById('savePerson').addEventListener('click', async ()=>{
     await persistUnlocked();
   }
   currentPersonId = p.id;
+  viewerPersonId = p.id;
+  try{ localStorage.setItem('kr_viewer_person', viewerPersonId); }catch(e){}
   await persistSelection();
   render();
 });
@@ -1102,6 +1248,10 @@ document.getElementById('cancelFav').addEventListener('click', closeAddFavForm);
 document.getElementById('addFavBackdrop').addEventListener('click', closeAddFavForm);
 async function selectPerson(id){
   currentPersonId = id;
+  if(isUnlocked(id)){
+    viewerPersonId = id;
+    try{ localStorage.setItem('kr_viewer_person', viewerPersonId); }catch(e){}
+  }
   await persistSelection();
   render();
 }
@@ -1114,6 +1264,8 @@ document.getElementById('unlockBtn').addEventListener('click', async ()=>{
     p.pin = pinVal;
     await persist();
     if(!unlockedIds.includes(p.id)) unlockedIds.push(p.id);
+    viewerPersonId = p.id;
+    try{ localStorage.setItem('kr_viewer_person', viewerPersonId); }catch(e){}
     await persistUnlocked();
     document.getElementById('unlockPin').value='';
     render();
@@ -1121,6 +1273,8 @@ document.getElementById('unlockBtn').addEventListener('click', async ()=>{
   }
   if(pinVal === p.pin){
     if(!unlockedIds.includes(p.id)) unlockedIds.push(p.id);
+    viewerPersonId = p.id;
+    try{ localStorage.setItem('kr_viewer_person', viewerPersonId); }catch(e){}
     await persistUnlocked();
     document.getElementById('unlockPin').value='';
     render();
@@ -1162,6 +1316,36 @@ async function updateAuthor(id, val){
   if(!isCurrentAdmin()) return;
   const s = data.stories.find(x=>x.id===id);
   if(s){ s.author = val; await persist(); render(); }
+}
+async function updateStoryDescription(id, val){ if(!isCurrentAdmin()) return; const s=data.stories.find(x=>x.id===id); if(s){ s.description=val; await persist(); render(); if(document.getElementById('storyInfoBackdrop')?.classList.contains('show')) openStoryInfo(id); } }
+async function updateStoryGenres(id, val){ if(!isCurrentAdmin()) return; const s=data.stories.find(x=>x.id===id); if(s){ s.genres=String(val||'').split(',').map(x=>x.trim()).filter(Boolean); await persist(); render(); if(document.getElementById('storyInfoBackdrop')?.classList.contains('show')) openStoryInfo(id); } }
+async function updateStoryCover(id, val){ if(!isCurrentAdmin()) return; const s=data.stories.find(x=>x.id===id); if(s){ s.cover=String(val||'').trim(); await persist(); render(); if(document.getElementById('storyInfoBackdrop')?.classList.contains('show')) openStoryInfo(id); } }
+async function handleStoryCoverFile(id, file){
+  if(!isCurrentAdmin() || !file) return;
+  if(!file.type.startsWith('image/')){ alert('Выбери изображение'); return; }
+  const reader=new FileReader();
+  reader.onload=(ev)=>{
+    const img=new Image();
+    img.onload=async()=>{
+      const maxW=360, maxH=520;
+      const scale=Math.min(maxW/img.width, maxH/img.height, 1);
+      const w=Math.max(1,Math.round(img.width*scale)), h=Math.max(1,Math.round(img.height*scale));
+      const canvas=document.createElement('canvas'); canvas.width=w; canvas.height=h;
+      const ctx=canvas.getContext('2d'); ctx.drawImage(img,0,0,w,h);
+      const s=data.stories.find(x=>x.id===id); if(!s) return;
+      s.cover=canvas.toDataURL('image/jpeg',0.84);
+      await persist();
+      render();
+      openStoryInfo(id);
+    };
+    img.src=ev.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+async function removeStoryCover(id){
+  if(!isCurrentAdmin()) return;
+  const s=data.stories.find(x=>x.id===id); if(!s) return;
+  s.cover=''; await persist(); render(); openStoryInfo(id);
 }
 async function updateStatus(id, status){
   if(!isCurrentAdmin()) return;
@@ -1290,25 +1474,38 @@ function renderShelf(){
     const e = document.createElement('div'); e.className='shelf-empty'; e.textContent='Полка пуста';
     shelf.appendChild(e); return;
   }
-  data.stories.forEach(s=>{
-    const read = currentPersonId && data.ratings[currentPersonId] && data.ratings[currentPersonId][s.id] && data.ratings[currentPersonId][s.id].read;
-    const avg = isViewingOwnProfile() ? avgOf(currentPersonId, s.id) : null;
+  data.stories.forEach((s, index)=>{
     const spine = document.createElement('div');
-    const h = avg ? 26 + avg*9 : 24;
-    spine.className = 'spine' + (!read ? ' unread' : '');
+    const h = 145 + ((index * 17 + String(s.id).length * 7) % 31);
+    spine.className = 'spine ' + (s.status==='done' ? 'done' : 'ongoing');
     spine.style.height = h+'px';
-    if(read && isViewingOwnProfile()){
-      const t = avg ? Math.min(1,(avg-1)/4) : 0.2;
-      spine.style.background = mixColor(t);
-    }
+    const title = document.createElement('span');
+    title.className = 'spine-title';
+    title.textContent = s.title;
+    spine.appendChild(title);
     spine.title = s.title;
-    spine.addEventListener('click', ()=>{
-      openId = s.id; render();
-      setTimeout(()=>{ const el=document.getElementById('card-'+s.id); if(el) el.scrollIntoView({behavior:'smooth', block:'center'}); }, 30);
-    });
+    spine.setAttribute('aria-label','Открыть описание: '+s.title);
+    spine.addEventListener('click', (event)=>{ event.preventDefault(); event.stopPropagation(); openStoryInfo(s.id); });
     shelf.appendChild(spine);
   });
+  initShelfScrollHint();
 }
+
+function initShelfScrollHint(){
+  const shelf = document.getElementById('shelf');
+  const wrap = document.getElementById('shelfWrap');
+  if(!shelf || !wrap || shelf.dataset.hintBound === '1') return;
+  shelf.dataset.hintBound = '1';
+  const update = ()=>{
+    wrap.classList.toggle('scrolled', shelf.scrollLeft > 8);
+    const canScroll = shelf.scrollWidth > shelf.clientWidth + 8;
+    wrap.querySelector('.shelf-scroll-hint')?.classList.toggle('hidden', !canScroll);
+  };
+  shelf.addEventListener('scroll', update, {passive:true});
+  window.addEventListener('resize', update);
+  update();
+}
+
 function mixColor(t){
   const c1=[122,93,176], c2=[192,118,144];
   const r=Math.round(c1[0]+(c2[0]-c1[0])*t), g=Math.round(c1[1]+(c2[1]-c1[1])*t), b=Math.round(c1[2]+(c2[2]-c1[2])*t);
@@ -1332,7 +1529,7 @@ function renderStats(){
   document.getElementById('noPersonNote').style.display = currentPersonId ? 'none' : 'block';
 
   const unlockBox = document.getElementById('unlockNote');
-  if(currentPersonId && !isUnlocked(currentPersonId)){
+  if(currentPersonId && !isUnlocked(currentPersonId) && (!viewerPersonId || viewerPersonId===currentPersonId)){
     const p = data.people.find(x=>x.id===currentPersonId);
     if(p && !p.pin){
       document.getElementById('unlockText').innerHTML = `Код профиля «${escapeHtml(p.name)}» был сброшен админом. <b style="color:var(--gold);">Придумай новый код</b>, чтобы снова редактировать.`;
@@ -1349,7 +1546,7 @@ function renderStats(){
   }
 
   const lockRow = document.getElementById('lockedStatusRow');
-  if(currentPersonId && isUnlocked(currentPersonId)){
+  if(currentPersonId && isViewingOwnProfile()){
     const p = data.people.find(x=>x.id===currentPersonId);
     lockRow.style.display = 'flex';
     const adminModeBtn = p && p.isAdmin
@@ -1382,6 +1579,10 @@ function toggleChangeAvatarPanel(){
 function lockCurrentProfile(){
   if(!currentPersonId) return;
   unlockedIds = unlockedIds.filter(id=>id!==currentPersonId);
+  if(viewerPersonId===currentPersonId){
+    viewerPersonId = null;
+    try{ localStorage.removeItem('kr_viewer_person'); }catch(e){}
+  }
   persistUnlocked();
   render();
 }
@@ -1413,9 +1614,8 @@ function personFavorites(personId){
   return out;
 }
 function findMatchViewerFor(viewedPersonId){
-  const others = unlockedIds.filter(id=>id!==viewedPersonId);
-  if(others.length!==1) return null;
-  const viewerId = others[0];
+  const viewerId = currentViewerId();
+  if(!viewerId || viewerId===viewedPersonId) return null;
   const pct = favoriteMatchPercent(viewerId, viewedPersonId);
   if(pct===null) return null;
   const viewer = data.people.find(x=>x.id===viewerId);
@@ -1423,25 +1623,7 @@ function findMatchViewerFor(viewedPersonId){
 }
 function renderList(){
   const list = document.getElementById('list');
-  if(currentPersonId && !isViewingOwnProfile()){
-    const p = data.people.find(x=>x.id===currentPersonId);
-    const readCount = data.stories.filter(st=>{ const r=data.ratings[currentPersonId]&&data.ratings[currentPersonId][st.id]; return r&&r.read; }).length;
-    const progressCount = data.stories.filter(st=>{ const r=data.ratings[currentPersonId]&&data.ratings[currentPersonId][st.id]; return r&&r.inProgress; }).length;
-    const match = findMatchViewerFor(currentPersonId);
-    const favs = personFavorites(currentPersonId);
-    list.innerHTML = `<div class="no-person-note" style="margin-top:14px;">
-      Профиль «${escapeHtml(p?p.name:'')}» выбран для просмотра. Здесь доступны только общие статусы чтения.<br><br>
-      <b>Всего:</b> ${data.stories.length} &nbsp;·&nbsp; <b>Читаю:</b> ${progressCount} &nbsp;·&nbsp; <b>Прочитано:</b> ${readCount}
-      ${match ? `<br><br><span class="fav-tag">♥ Совпадение вкусов с тобой (${escapeHtml(match.viewer?match.viewer.name:'')}): <b style="color:var(--gold);">${match.pct}%</b></span>` : ''}
-    </div>
-    ${favs.length ? `<div class="no-person-note" style="margin-top:-6px;">
-      <div style="font-family:'Manrope',sans-serif;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--gold);margin-bottom:8px;">Избранные персонажи</div>
-      <div style="display:flex;flex-direction:column;gap:6px;">
-        ${favs.map(f=>`<div style="display:flex;align-items:center;gap:6px;">${favBadgeHtml(f.story, f.name)} <span style="color:var(--text-dim);">— ${escapeHtml(f.storyTitle)}</span></div>`).join('')}
-      </div>
-    </div>` : ''}`;
-    return;
-  }
+  if(isViewingOtherProfile()){ list.innerHTML=''; return; }
   let filtered = data.stories;
   if(filterMode==='read' && currentPersonId){
     filtered = filtered.filter(s=>{
@@ -1550,10 +1732,10 @@ function renderList(){
     const editable = canEdit();
     const favGallery = `<div class="char-gallery favorite-gallery">
       ${chars.map(ch=>{
-        const click = `toggleFavName('${s.id}', decodeURIComponent('${encodeURIComponent(ch.name)}'))`;
+        const click = `toggleFavName('${s.id}', ${jsString(ch.name)})`;
         const adminActions = isCurrentAdmin() ? `<div class="char-actions">
-          <button class="char-action edit" title="Редактировать персонажа" onclick="event.stopPropagation();openEditFavForm('${s.id}', decodeURIComponent('${encodeURIComponent(ch.name)}'))">✎</button>
-          <button class="char-action delete" title="Удалить персонажа" onclick="event.stopPropagation();removeStoryFavorite('${s.id}', decodeURIComponent('${encodeURIComponent(ch.name)}'))">×</button>
+          <button class="char-action edit" title="Редактировать персонажа" onclick="event.stopPropagation();openEditFavForm('${s.id}', ${jsString(ch.name)})">✎</button>
+          <button class="char-action delete" title="Удалить персонажа" onclick="event.stopPropagation();removeStoryFavorite('${s.id}', ${jsString(ch.name)})">×</button>
         </div>` : '';
         return `<div class="char-item ${selected.includes(ch.name)?'selected':''} ${editable?'':'disabled'}" ${editable?`onclick="${click}"`:''}>
           ${adminActions}
@@ -1568,7 +1750,7 @@ function renderList(){
     const emotionsSel = (r && r.crit.emotions) || [];
     const emotionChips = EMOTION_TAGS.map(tag=>{
       const on = emotionsSel.includes(tag);
-      return `<button class="emo-chip ${on?'on':''}" ${canEdit()?'':'disabled'} onclick="toggleEmotion('${s.id}','${tag}')">${tag}</button>`;
+      return `<button class="emo-chip ${emotionTone(tag)} ${on?'on':''}" ${canEdit()?'':'disabled'} onclick="toggleEmotion('${s.id}','${tag}')">${tag}</button>`;
     }).join('');
 
     const authorList = [];
@@ -1601,7 +1783,12 @@ function renderList(){
           <div class="title-edit-row">
             <input value="${escapeHtml(s.title)}" placeholder="название" onchange="updateTitle('${s.id}', this.value)">
             <input value="${escapeHtml(s.author)}" placeholder="автор(ы) через запятую" onchange="updateAuthor('${s.id}', this.value)">
-          </div>` : ''}
+          </div>
+          <div class="title-edit-row">
+            <input value="${escapeHtml((s.genres||[]).join(', '))}" placeholder="жанры через запятую" onchange="updateStoryGenres('${s.id}', this.value)">
+            <label class="file-btn" style="flex:1;text-align:center;">${s.cover?'Заменить обложку':'Добавить обложку'}<input type="file" accept="image/*" style="display:none;" onchange="handleStoryCoverFile('${s.id}', this.files[0])"></label>
+          </div>
+          <textarea style="width:100%;min-height:70px;margin-bottom:10px;padding:8px 9px;border:1px solid var(--line);background:var(--bg-1);color:var(--text);border-radius:7px;font:12px 'Inter',sans-serif;resize:vertical;" placeholder="Аннотация истории" onchange="updateStoryDescription('${s.id}', this.value)">${escapeHtml(s.description||'')}</textarea>` : ''}
           <div class="status-block">
             <div class="status-block-label">Статус истории</div>
             <div class="status-toggle">
@@ -1789,60 +1976,193 @@ function toggleAuthorRatingsPanel(){
 
 function renderAuthorRatingsPanel(){
   const box = document.getElementById('authorRatingsPanel');
-  if(!box) return;
-  const otherProfile = !!currentPersonId && !isViewingOwnProfile();
-  if(!currentPersonId || !isUnlocked(currentPersonId) || otherProfile){
-    box.style.display='none';
-    box.innerHTML='';
+  if(!box || !currentPersonId){
+    if(box){ box.style.display='none'; box.innerHTML=''; }
     return;
   }
-  const authors = getAllAuthors();
-  if(!authors.length){
-    box.style.display='none';
-    box.innerHTML='';
-    return;
-  }
+  const allAuthors = getAllAuthors();
+  const authors = isViewingOwnProfile()
+    ? allAuthors
+    : allAuthors.filter(name=>{
+        const a=getAuthorRating(currentPersonId,name);
+        return authorScore(currentPersonId,name)!==null || !!String(a.note||'').trim();
+      });
+  const editable = canEdit();
+  const targetId = currentPersonId;
   const baseOpts = [{v:'',l:''},{v:'1',l:'1'},{v:'2',l:'2'},{v:'3',l:'3'},{v:'4',l:'4'},{v:'5',l:'5'}];
   const optionsHtml = (cur)=>baseOpts.map(o=>`<option value="${o.v}" ${String(cur||'')===o.v?'selected':''}>${o.l}</option>`).join('');
   box.style.display='block';
   box.innerHTML = `
-    <div class="admin-people-panel" style="margin-bottom:0;">
-      <button type="button" class="author-ratings-toggle" onclick="toggleAuthorRatingsPanel()" aria-expanded="${!authorRatingsCollapsed}">
-        <span>Мнение об авторах</span><span class="author-ratings-chevron">${authorRatingsCollapsed ? '▾' : '▴'}</span>
+    <div class="profile-panel">
+      <button type="button" class="profile-panel-toggle" onclick="toggleAuthorRatingsPanel()" aria-expanded="${!authorRatingsCollapsed}">
+        <span>Мнение об авторах</span><span class="profile-panel-chevron">${authorRatingsCollapsed ? '▾' : '▴'}</span>
       </button>
-      <div style="display:${authorRatingsCollapsed?'none':'block'};">
-        <div style="font-family:'Manrope',sans-serif;font-size:11px;color:var(--text-dim);margin:10px 0;line-height:1.45;">Здесь можно отдельно оценить каждого автора и оставить заметку. Эти оценки не привязаны к конкретной истории.</div>
-      ${authors.map(name=>{
-        const a = getAuthorRating(currentPersonId, name);
-        const nextPlus = a.mod==='+' ? '' : '+';
-        const nextMinus = a.mod==='-' ? '' : '-';
-        const enc = encodeURIComponent(name);
-        const score = authorScore(currentPersonId, name);
-        return `<div class="author-opinion-row">
-          <div class="author-opinion-name">${escapeHtml(name)} ${score!==null?`<span class="author-score">${formatScore(score)}</span>`:''}</div>
-          <div class="crit-controls">
-            <select ${canEdit()?'':'disabled'} onchange="updateAuthorField(decodeURIComponent('${enc}'),'base',this.value)">${optionsHtml(a.base)}</select>
-            <button class="mod-btn ${a.mod==='-'?'on':''}" ${canEdit()?'':'disabled'} onclick="updateAuthorField(decodeURIComponent('${enc}'),'mod','${nextMinus}')">−</button>
-            <button class="mod-btn ${a.mod==='+'?'on':''}" ${canEdit()?'':'disabled'} onclick="updateAuthorField(decodeURIComponent('${enc}'),'mod','${nextPlus}')">+</button>
+      <div class="profile-panel-body" style="display:${authorRatingsCollapsed?'none':'block'};">
+      ${authors.length ? authors.map(name=>{
+        const a = getAuthorRating(targetId, name);
+        const score = authorScore(targetId, name);
+        return `<div class="profile-summary-row" style="display:block;">
+          <div class="profile-summary-main">
+            <div class="profile-summary-title">${escapeHtml(name)}${score!==null?` <span class="profile-summary-score">${formatScore(score)}</span>`:''}</div>
+            ${editable ? `<div class="crit-controls" style="margin-top:7px;">
+              <select onchange="updateAuthorField(${JSON.stringify(name)},'base',this.value)">${optionsHtml(a.base)}</select>
+              <button type="button" class="mod-btn ${a.mod==='-'?'on':''}" onclick="updateAuthorField(${JSON.stringify(name)},'mod',${a.mod==='-'?"''":"'-'"})">−</button>
+              <button type="button" class="mod-btn ${a.mod==='+'?'on':''}" onclick="updateAuthorField(${JSON.stringify(name)},'mod',${a.mod==='+'?"''":"'+'"})">+</button>
+            </div>
+            <input type="text" value="${escapeHtml(a.note||'')}" placeholder="Ваше мнение об авторе…" oninput="updateAuthorField(${JSON.stringify(name)},'note',this.value)" style="width:100%;box-sizing:border-box;margin-top:7px;">` : (a.note?`<div class="profile-summary-note">${escapeHtml(a.note)}</div>`:'')}
           </div>
-          <input class="fav-name" style="width:100%;margin-top:7px;box-sizing:border-box;" ${canEdit()?'':'disabled'} value="${escapeHtml(a.note||'')}" placeholder="Заметка об авторе" onchange="updateAuthorField(decodeURIComponent('${enc}'),'note',this.value)">
         </div>`;
-      }).join('')}
+      }).join('') : `<div class="compare-empty">Пока нет мнений об авторах.</div>`}
       </div>
     </div>`;
 }
 
+let storyOpinionsCollapsed = localStorage.getItem('storyOpinionsCollapsed') !== 'false';
+let profileFavoritesCollapsed = localStorage.getItem('profileFavoritesCollapsed') !== 'false';
+
+function toggleStoryOpinionsPanel(){
+  storyOpinionsCollapsed = !storyOpinionsCollapsed;
+  localStorage.setItem('storyOpinionsCollapsed', storyOpinionsCollapsed ? 'true' : 'false');
+  renderStoryOpinionsPanel();
+}
+function toggleProfileFavoritesPanel(){
+  profileFavoritesCollapsed = !profileFavoritesCollapsed;
+  localStorage.setItem('profileFavoritesCollapsed', profileFavoritesCollapsed ? 'true' : 'false');
+  renderProfileFavoritesPanel();
+}
+function renderStoryOpinionsPanel(){
+  const box=document.getElementById('storyOpinionsPanel');
+  if(!box || !currentPersonId || isViewingOwnProfile()){ if(box){box.style.display='none';box.innerHTML='';} return; }
+  const rows=[];
+  data.stories.forEach(s=>{
+    const r=data.ratings[currentPersonId] && data.ratings[currentPersonId][s.id];
+    const score=avgOf(currentPersonId,s.id);
+    const favs=favoriteNamesOf(r);
+    const note=r && r.notes ? String(r.notes).trim() : '';
+    if(score===null && !favs.length && !note) return;
+    rows.push({s,score,favs,note});
+  });
+  box.style.display='block';
+  box.innerHTML=`
+    <div class="profile-panel">
+      <button type="button" class="profile-panel-toggle" onclick="toggleStoryOpinionsPanel()" aria-expanded="${!storyOpinionsCollapsed}">
+        <span>Мнение об историях</span><span class="profile-panel-chevron">${storyOpinionsCollapsed?'▾':'▴'}</span>
+      </button>
+      <div class="profile-panel-body" style="display:${storyOpinionsCollapsed?'none':'block'};">
+        ${rows.length ? rows.map(({s,score,favs,note})=>`<div class="profile-summary-row">
+          <div class="profile-summary-main">
+            <div class="profile-summary-title">${escapeHtml(s.title)}</div>
+            <div class="profile-summary-sub">${escapeHtml(s.author||'')}</div>
+            ${favs.length?`<div class="profile-summary-sub" style="color:var(--rose);">♥ ${escapeHtml(favs.join(', '))}</div>`:''}
+            ${note?`<div class="profile-summary-note">${escapeHtml(note)}</div>`:''}
+          </div>
+          ${score!==null?`<div class="profile-summary-score">${formatScore(score)}</div>`:''}
+        </div>`).join('') : `<div class="compare-empty">Пока нет оценок, фаворитов или заметок.</div>`}
+      </div>
+    </div>`;
+}
+
+function renderProfileFavoritesPanel(){
+  const box=document.getElementById('profileFavoritesPanel');
+  if(!box || !currentPersonId || isViewingOwnProfile()){ if(box){box.style.display='none';box.innerHTML='';} return; }
+  const favs=personFavorites(currentPersonId);
+  const viewerId=currentViewerId();
+  const match=(viewerId && viewerId!==currentPersonId) ? favoriteMatchPercent(viewerId,currentPersonId) : null;
+  const viewer=data.people.find(p=>p.id===viewerId);
+  box.style.display='block';
+  box.innerHTML=`
+    <div class="profile-panel">
+      <button type="button" class="profile-panel-toggle" onclick="toggleProfileFavoritesPanel()" aria-expanded="${!profileFavoritesCollapsed}">
+        <span>Фавориты и совпадение вкусов</span><span class="profile-panel-chevron">${profileFavoritesCollapsed?'▾':'▴'}</span>
+      </button>
+      <div class="profile-panel-body" style="display:${profileFavoritesCollapsed?'none':'block'};">
+        ${match!==null?`<div class="profile-match">♥ ${match}% совпадения по фаворитам${viewer?` с ${escapeHtml(viewer.name)}`:''}</div>`:''}
+        ${favs.length ? `<div class="profile-fav-wrap">${favs.map(f=>`<div class="profile-summary-row" style="width:100%;box-sizing:border-box;">
+          ${favBadgeHtml(f.story,f.name)}<span class="profile-fav-story">— ${escapeHtml(f.storyTitle)}</span>
+        </div>`).join('')}</div>` : `<div class="compare-empty">Фаворитов пока нет.</div>`}
+      </div>
+    </div>`;
+}
+
+function storyShelfPeople(storyId){
+  return data.people.map(p=>{
+    const r=data.ratings[p.id] && data.ratings[p.id][storyId];
+    if(!r || (!r.read && !r.inProgress)) return null;
+    return {p,r};
+  }).filter(Boolean);
+}
+function storyStatusLabel(r){
+  if(r.read) return {text:'✓ прочитано', cls:'read'};
+  if(r.inProgress) return {text:'📖 читает', cls:''};
+  return {text:'', cls:''};
+}
+function openStoryInfo(storyId){
+  const s=data.stories.find(x=>x.id===storyId); if(!s) return;
+  const backdrop=document.getElementById('storyInfoBackdrop');
+  const content=document.getElementById('storyInfoContent');
+  const people=storyShelfPeople(storyId);
+  const genres=Array.isArray(s.genres)?s.genres:[];
+  const initials=(s.title||'?').trim().slice(0,1).toUpperCase();
+  const cover=s.cover ? `background-image:url(${escapeHtml(s.cover)});` : '';
+  content.innerHTML=`
+    <div class="story-info-top">
+      <div class="story-info-cover" style="${cover}">${s.cover?'':escapeHtml(initials)}</div>
+      <div>
+        <div class="story-info-title">${escapeHtml(s.title)}</div>
+        ${s.author?`<div class="story-info-author">${escapeHtml(s.author)}</div>`:''}
+      </div>
+    </div>
+    <div class="story-info-section">
+      <div class="story-info-label">Жанр</div>
+      ${genres.length?`<div class="story-info-genres">${genres.map(g=>`<span class="story-info-genre">${escapeHtml(g)}</span>`).join('')}</div>`:'<div class="story-info-empty">Не указан.</div>'}
+    </div>
+    <div class="story-info-section">
+      <div class="story-info-label">Аннотация</div>
+      <div class="story-info-description">${s.description?escapeHtml(s.description):'<span class="story-info-empty">Описание пока не добавлено.</span>'}</div>
+    </div>
+    <div class="story-info-section story-info-people">
+      <div class="story-info-label">На полке у</div>
+      ${people.length ? people.map(({p,r})=>{const st=storyStatusLabel(r); return `<div class="story-info-person"><span class="story-info-person-name">${escapeHtml(p.name)}</span><span class="story-info-status ${st.cls}">${st.text}</span></div>`}).join('') : '<div class="story-info-empty">Пока никто не отметил эту историю.</div>'}
+    </div>
+    ${isCurrentAdmin()?`<div class="story-info-admin">
+      <div class="story-info-label">Редактирование описания</div>
+      <div class="story-info-admin-grid">
+        <textarea id="storyDescEdit" placeholder="Аннотация истории...">${escapeHtml(s.description||'')}</textarea>
+        <input id="storyGenresEdit" value="${escapeHtml(genres.join(', '))}" placeholder="Жанры через запятую">
+        <div class="story-cover-upload">
+          <div class="story-cover-preview" id="storyCoverPreview" style="${s.cover?`background-image:url(${s.cover});`:''}">${s.cover?'':'📖'}</div>
+          <label class="file-btn">${s.cover?'Заменить обложку':'Добавить обложку'}<input type="file" accept="image/*" id="storyCoverFileModal" style="display:none;"></label>
+          ${s.cover?`<button type="button" class="filter-btn" id="storyCoverRemove">Удалить</button>`:''}
+        </div>
+      </div>
+      <div class="admin-save-note">Изменения сохраняются автоматически при потере фокуса.</div>
+    </div>`:''}`;
+  if(isCurrentAdmin()){
+    document.getElementById('storyDescEdit').addEventListener('change',e=>updateStoryDescription(storyId,e.target.value));
+    document.getElementById('storyGenresEdit').addEventListener('change',e=>updateStoryGenres(storyId,e.target.value));
+    document.getElementById('storyCoverFileModal').addEventListener('change',e=>{
+      const file=e.target.files && e.target.files[0];
+      if(file) handleStoryCoverFile(storyId,file);
+    });
+    document.getElementById('storyCoverRemove')?.addEventListener('click',()=>removeStoryCover(storyId));
+  }
+  backdrop.classList.add('show'); backdrop.setAttribute('aria-hidden','false'); document.body.style.overflow='hidden';
+}
+function closeStoryInfo(){
+  const b=document.getElementById('storyInfoBackdrop'); if(!b) return;
+  b.classList.remove('show'); b.setAttribute('aria-hidden','true'); document.body.style.overflow='';
+}
 function render(){
   renderPeople();
   renderAdminPeoplePanel();
   renderShelf();
   renderStats();
   renderAuthorRatingsPanel();
+  renderStoryOpinionsPanel();
+  renderProfileFavoritesPanel();
   renderFilters();
   renderList();
-  const otherProfile = !!currentPersonId && !isViewingOwnProfile();
-  document.querySelector('.shelf-label').style.display = otherProfile ? 'none' : '';
-  document.getElementById('shelf').style.display = otherProfile ? 'none' : '';
+  const otherProfile = isViewingOtherProfile();
   document.querySelector('.toolbar').style.display = otherProfile ? 'none' : '';
   document.getElementById('filters').style.display = otherProfile ? 'none' : '';
   document.querySelector('.actions-row').style.display = otherProfile ? 'none' : '';
@@ -2016,7 +2336,7 @@ function renderAdmin(){
           <div class="story-main">
             <div class="story-top">
               <div>
-                <div class="story-title">${escapeHtml(s.title)}</div>
+                <div class="story-title" style="cursor:pointer;" onclick="event.stopPropagation();openStoryInfo('${s.id}')">${escapeHtml(s.title)}</div>
                 ${s.author ? `<div class="story-author">${escapeHtml(s.author)}</div>` : ''}
               </div>
               ${agg ? `<div class="avg-badge"><b>${formatScore(agg.avg)}</b><span>${overallWord(agg.avg)}</span></div>` : ''}
@@ -2042,15 +2362,17 @@ let savedListScroll = 0;
 function favoriteMatchPercent(personIdA, personIdB){
   if(!personIdA || !personIdB || personIdA===personIdB) return null;
   let total=0, matches=0;
+  const norm=n=>String(n||'').toLocaleLowerCase('ru-RU').replace(/ё/g,'е').trim();
   data.stories.forEach(s=>{
     const ra = data.ratings[personIdA] && data.ratings[personIdA][s.id];
     const rb = data.ratings[personIdB] && data.ratings[personIdB][s.id];
-    const favA = favoriteNamesOf(ra).map(n=>n.toLowerCase());
-    const favB = favoriteNamesOf(rb).map(n=>n.toLowerCase());
-    if(favA.length && favB.length){
-      total++;
-      if(favA.some(n=>favB.includes(n))) matches++;
-    }
+    const favA = new Set(favoriteNamesOf(ra).map(norm).filter(Boolean));
+    const favB = new Set(favoriteNamesOf(rb).map(norm).filter(Boolean));
+    // Считаем только истории, где хотя бы у одного человека выбран фаворит.
+    // Так 1 случайный общий фаворит не превращает совпадение в 100%.
+    if(!favA.size && !favB.size) return;
+    total++;
+    if([...favA].some(n=>favB.has(n))) matches++;
   });
   if(total===0) return null;
   return Math.round((matches/total)*100);
@@ -2078,7 +2400,7 @@ function openPersonStoryDetail(personId, storyId){
 
   const emotionsSel = (r && r.crit.emotions) || [];
   const emoHtml = emotionsSel.length
-    ? emotionsSel.map(t=>`<span class="emo-chip on" style="cursor:default;">${t}</span>`).join('')
+    ? emotionsSel.map(t=>`<span class="emo-chip ${emotionTone(t)} on" style="cursor:default;">${escapeHtml(t)}</span>`).join('')
     : `<span class="compare-none">не отмечено</span>`;
 
   const match = favoriteMatchPercent(currentPersonId, personId);
@@ -2196,6 +2518,7 @@ function switchTab(tab){
   renderAdmin();
 }
 function openAdmin(){
+  document.documentElement.classList.add('start-admin');
   document.getElementById('mainView').style.display='none';
   document.getElementById('adminView').style.display='block';
   try{ localStorage.setItem('kr_last_view','admin'); }catch(e){}
@@ -2203,6 +2526,7 @@ function openAdmin(){
   window.scrollTo({top:0});
 }
 function closeAdmin(){
+  document.documentElement.classList.remove('start-admin');
   document.getElementById('adminView').style.display='none';
   document.getElementById('mainView').style.display='block';
   try{ localStorage.setItem('kr_last_view','main'); }catch(e){}
@@ -2216,6 +2540,8 @@ document.getElementById('tabAuthors').addEventListener('click', ()=> switchTab('
 document.getElementById('retrySaveBtn').addEventListener('click', persist);
 
 load();
+document.getElementById('storyInfoBackdrop')?.addEventListener('click',e=>{ if(e.target.id==='storyInfoBackdrop') closeStoryInfo(); });
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeStoryInfo(); });
 </script>
 </body>
 </html>
