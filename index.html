@@ -656,6 +656,45 @@ async function kvSet(key, value){
   if(!res.ok) throw new Error('kv set failed: '+res.status);
 }
 
+// Ручная резервная копия: сохраняет ТЕКУЩЕЕ состояние на сервере под новым
+// ключом с датой и временем, ничего не перезаписывая. Каждая копия — это
+// отдельная строка в таблице (kr_data_backup_2026-08-18_1235 и т.п.),
+// поэтому старые бэкапы никогда не теряются, пока их не удалить вручную.
+async function backupNow(){
+  if(!isCurrentAdmin()) return;
+  const btn = document.getElementById('backupNowBtn');
+  const status = document.getElementById('backupStatus');
+  if(btn) btn.disabled = true;
+  if(status) status.textContent = 'Создаю копию…';
+  try{
+    // Берём именно то, что сейчас реально сохранено на сервере (а не то, что
+    // могло остаться несинхронизированным в этой открытой вкладке).
+    const val = await kvGet('kr_data');
+    if(!val) throw new Error('empty kr_data on server');
+    const now = new Date();
+    const pad = n => String(n).padStart(2,'0');
+    const stamp = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+    const key = `kr_data_backup_${stamp}`;
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/kr_data`, {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_KEY,
+        'Authorization': `Bearer ${SUPABASE_KEY}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal'
+      },
+      body: JSON.stringify({ key, value: val })
+    });
+    if(!res.ok) throw new Error('backup insert failed: '+res.status);
+    if(status) status.textContent = `Готово: копия сохранена в ${pad(now.getHours())}:${pad(now.getMinutes())}`;
+  }catch(e){
+    console.error('backupNow error', e);
+    if(status) status.textContent = 'Не получилось создать копию — попробуйте ещё раз.';
+  }finally{
+    if(btn) btn.disabled = false;
+  }
+}
+
 function normalizeStoryTitleForMatch(title){
   return String(title||'').toLocaleLowerCase('ru-RU')
     .replace(/ё/g,'е')
@@ -1067,6 +1106,13 @@ function renderAdminPeoplePanel(){
   const hasDemo = data.people.some(p=>p.isDemo);
   const gallery = data.avatarGallery || [];
   box.innerHTML = `<div class="admin-people-panel">
+    <div class="admin-people-label">Резервная копия</div>
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+      <button class="filter-btn" id="backupNowBtn" onclick="backupNow()">💾 Сделать резервную копию сейчас</button>
+      <span id="backupStatus" style="font-size:12px;color:var(--text-dim);"></span>
+    </div>
+  </div>
+  <div class="admin-people-panel">
     <div class="admin-people-label">Права доступа</div>
     ${data.people.map(p=>`
       <div class="admin-people-row">
