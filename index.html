@@ -33,8 +33,29 @@
   }
   .wrap{max-width:760px;margin:0 auto;padding:26px 16px 90px;}
   .eyebrow{font-family:'Manrope',sans-serif;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--rose);margin-bottom:6px;}
-  .save-banner{display:flex;align-items:center;gap:10px;justify-content:space-between;background:rgba(192,118,144,0.18);border:1px solid var(--rose);border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:var(--text);flex-wrap:wrap;}
-  .save-banner button{font-family:'Manrope',sans-serif;font-size:11.5px;font-weight:700;padding:6px 12px;border-radius:20px;border:1px solid var(--rose);background:transparent;color:var(--text);cursor:pointer;white-space:nowrap;}
+  .save-banner{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  justify-content:center;
+  background:rgba(192,118,144,0.18);
+  border:1px solid var(--rose);
+  border-radius:20px;
+  padding:7px 12px;
+  margin:0;
+  font-size:11.5px;
+  color:var(--text);
+  flex-wrap:wrap;
+  position:fixed;
+  top:max(10px, env(safe-area-inset-top));
+  right:12px;
+  z-index:99999;
+  max-width:calc(100vw - 24px);
+  box-shadow:0 6px 20px rgba(0,0,0,.28);
+  backdrop-filter:blur(10px);
+  -webkit-backdrop-filter:blur(10px);
+}
+  .save-banner.save-ok{background:rgba(159,214,201,0.14);border-color:var(--mint);}.save-banner.save-working{background:rgba(205,168,106,0.14);border-color:var(--gold);}.save-banner.save-error{background:rgba(192,118,144,0.18);border-color:var(--rose);}.save-banner button{font-family:'Manrope',sans-serif;font-size:10.5px;font-weight:700;padding:5px 10px;border-radius:16px;border:1px solid var(--rose);background:transparent;color:var(--text);cursor:pointer;white-space:nowrap;}
   h1{font-family:'Marcellus',serif;font-weight:400;font-size:32px;margin:0 0 8px;
      background:linear-gradient(120deg, #f3e6c9, var(--gold) 60%, #f3e6c9);
      -webkit-background-clip:text;background-clip:text;color:transparent;letter-spacing:.01em;}
@@ -142,6 +163,12 @@
   .story-info-genres{display:flex;gap:5px;flex-wrap:wrap;}
   .story-info-genre{font-size:9.5px;color:var(--gold);border:1px solid rgba(205,168,106,.3);background:rgba(205,168,106,.07);padding:4px 7px;border-radius:999px;}
   .story-info-section{padding:0 18px 12px;}
+  .story-format-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px;}
+  .story-format-field{min-width:0;}
+  .story-format-label{display:block;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:#bda66e;margin-bottom:7px;}
+  .story-format-input{width:100%;box-sizing:border-box;background:#1b1429;border:1px solid rgba(189,166,110,.28);border-radius:10px;color:#eee6f4;padding:11px 12px;font:inherit;outline:none;}
+  .story-format-input:focus{border-color:rgba(189,166,110,.65);}
+
   .story-info-label{font-family:'Manrope',sans-serif;font-size:9px;text-transform:uppercase;letter-spacing:.09em;color:var(--gold);margin-bottom:7px;}
   .story-info-description{font-size:12.5px;line-height:1.55;color:var(--text);white-space:pre-line;}
   .story-info-people{border-top:1px solid var(--line);padding-top:13px;}
@@ -297,8 +324,8 @@
 
 <div class="wrap" id="mainView">
   <div id="saveBanner" class="save-banner" style="display:none;">
-    <span>Не удалось сохранить последние изменения — пробуем снова автоматически.</span>
-    <button id="retrySaveBtn">Повторить сейчас</button>
+    <span id="saveBannerText">Сохранено</span>
+    <button id="retrySaveBtn" style="display:none;">Повторить сейчас</button>
   </div>
   <div class="eyebrow">Клуб Романтики · общий стеллаж</div>
   <h1>Стеллаж историй</h1>
@@ -551,11 +578,19 @@ function setExtraFavoriteNames(entry, names){
   entry.name = entry.names[0] || '';
 }
 function splitAuthors(str){ return (str||'').split(',').map(a=>a.trim()).filter(Boolean); }
-function favoriteNamesOf(entry){
+function favoriteSelectionLimit(story){
+  // Основное поле «Фаворит» = 1 место. Каждое дополнительное поле
+  // увеличивает допустимое количество выбранных фаворитов ещё на одно.
+  return Math.max(1, 1 + extraFavoriteCriteriaOf(story).length);
+}
+function favoriteNamesOf(entry, story){
   if(!entry || !entry.crit || !entry.crit.favorite) return [];
   const f = entry.crit.favorite;
-  if(Array.isArray(f.names)) return f.names.filter(Boolean);
-  return f.name ? [f.name] : [];
+  const names = Array.isArray(f.names) ? f.names.filter(Boolean) : (f.name ? [f.name] : []);
+  // Старые данные не удаляем: если раньше было выбрано больше фаворитов,
+  // чем разрешено текущей схемой истории, лишние просто не участвуют
+  // в отображении, рейтингах и сравнении вкусов.
+  return story ? names.slice(0, favoriteSelectionLimit(story)) : names;
 }
 function setFavoriteNames(entry, names){
   if(!entry.crit.favorite) entry.crit.favorite = {name:'', names:[]};
@@ -703,9 +738,10 @@ function normalizeStoriesForSave(){
 async function load(){
   // Instant first paint from the last known snapshot; Supabase refreshes it in the background.
   let loaded = false;
+  let hadCache = false;
   try{
     const cached = localStorage.getItem('kr_data_cache');
-    if(cached){ data = JSON.parse(cached); loaded = !!(data && data.stories); }
+    if(cached){ data = JSON.parse(cached); loaded = !!(data && data.stories); hadCache = loaded; }
   }catch(e){ loaded=false; }
   try{
     const sel = localStorage.getItem('kr_selected_person');
@@ -719,10 +755,29 @@ async function load(){
     if(!viewerPersonId && currentPersonId && isUnlocked(currentPersonId)) viewerPersonId=currentPersonId;
     render();
   }
+  // ВАЖНО: "запрос к базе упал" (нет сети/CORS/файл открыт локально и т.п.)
+  // и "база ответила и данных там правда нет" — это РАЗНЫЕ ситуации.
+  // Раньше при любой ошибке fetch мы считали, что данных нет, и ниже
+  // пересоздавали и СОХРАНЯЛИ пустую структуру поверх настоящей базы.
+  // Именно так один раз стёрло всё содержимое сайта. Теперь при сбое
+  // запроса мы ничего не стираем и ничего не отправляем на сервер.
+  let fetchFailed = false;
   try{
     const val = await kvGet('kr_data');
     if(val){ data = JSON.parse(val); loaded = true; try{ localStorage.setItem('kr_data_cache', JSON.stringify(data)); }catch(e){} }
-  }catch(e){ console.error('load kr_data error', e); loaded = false; }
+  }catch(e){ console.error('load kr_data error', e); fetchFailed = true; }
+
+  if(fetchFailed){
+    if(!hadCache){
+      // Данных нет ни в кэше на этом устройстве, ни удалось получить с сервера.
+      // Ничего не создаём и не сохраняем — просто сообщаем об ошибке.
+      alert('Не удалось загрузить данные с сервера. Проверьте подключение к интернету и обновите страницу. Ничего не сохранено, чтобы случайно не затереть базу.');
+    }
+    // Работаем с тем, что уже отрисовано из кэша (если он был), и выходим,
+    // не трогая базу данных.
+    return;
+  }
+
   if(!loaded || !data.stories || data.stories.length===0){
     data = { stories: [], people: [], ratings: {}, avatarGallery: [] };
     STORY_ORDER.forEach(([title, author])=>{
@@ -828,40 +883,98 @@ async function load(){
     window.scrollTo({top:0});
   }
 }
+
 let saveFailed = false;
-let retryTimer = null;
-async function persist(){
-  normalizeStoriesForSave();
-  try{
-    await kvSet('kr_data', JSON.stringify(data));
-    saveFailed = false;
-    try{ localStorage.setItem('kr_data_cache', JSON.stringify(data)); }catch(e){}
-    if(retryTimer){ clearTimeout(retryTimer); retryTimer = null; }
-  } catch(e){
-    console.error('storage error', e);
-    try{ localStorage.setItem('kr_data_cache', JSON.stringify(data)); }catch(e){}
-    saveFailed = true;
-    if(!retryTimer){
-      retryTimer = setTimeout(()=>{ retryTimer = null; persist(); }, 4000);
-    }
-  }
-  updateSaveBanner();
-}
-// Быстрое сохранение для частых изменений полей.
-// Интерфейс не ждёт хранилище: несколько быстрых кликов объединяются в одну запись.
-let persistDebounceTimer = null;
-function schedulePersist(delay=220){
-  if(persistDebounceTimer) clearTimeout(persistDebounceTimer);
-  persistDebounceTimer = setTimeout(()=>{
-    persistDebounceTimer = null;
-    persist();
-  }, delay);
-}
-function updateSaveBanner(){
+let saveState = 'saved'; // saved | saving | error
+let persistTimer = null;
+let persistRunning = false;
+let persistQueued = false;
+let persistVersion = 0;
+let savedVersion = 0;
+
+function updateSaveBanner(state = saveState){
   const el = document.getElementById('saveBanner');
   if(!el) return;
-  el.style.display = saveFailed ? 'flex' : 'none';
+  const text = el.querySelector('span');
+  const btn = el.querySelector('button');
+  el.dataset.state = state;
+  el.style.display = 'flex';
+
+  if(state === 'saving'){
+    text.textContent = '🟡 Сохраняю…';
+    if(btn) btn.style.display = 'none';
+  }else if(state === 'saved'){
+    text.textContent = '🟢 Сохранено';
+    if(btn) btn.style.display = 'none';
+  }else{
+    text.textContent = '🔴 Не удалось сохранить';
+    if(btn){
+      btn.textContent = 'Повторить';
+      btn.style.display = 'inline-block';
+    }
+  }
 }
+
+function markDirty(){
+  persistVersion++;
+  saveState = 'saving';
+  saveFailed = false;
+  updateSaveBanner('saving');
+
+  if(persistTimer) clearTimeout(persistTimer);
+  // Объединяем быстрые изменения, чтобы не отправлять базу после каждого клика.
+  persistTimer = setTimeout(()=>{
+    persistTimer = null;
+    persist();
+  }, 650);
+}
+
+async function persist(){
+  if(persistRunning){
+    persistQueued = true;
+    return;
+  }
+
+  persistRunning = true;
+  persistQueued = false;
+  const versionAtStart = persistVersion;
+
+  normalizeStoriesForSave();
+
+  try{
+    const payload = JSON.stringify(data);
+    await kvSet('kr_data', payload);
+
+    // Кэш пишем после успешной серверной записи, но не считаем его частью
+    // пользовательского ожидания.
+    try{ localStorage.setItem('kr_data_cache', payload); }catch(e){}
+
+    savedVersion = versionAtStart;
+    saveFailed = false;
+
+    if(persistQueued || persistVersion !== savedVersion){
+      persistQueued = false;
+      persistRunning = false;
+      // Сразу сохраняем последнюю версию, без повторного таймера.
+      return persist();
+    }
+
+    saveState = 'saved';
+    updateSaveBanner('saved');
+  }catch(e){
+    console.error('storage error', e);
+    saveFailed = true;
+    saveState = 'error';
+    updateSaveBanner('error');
+  }finally{
+    persistRunning = false;
+  }
+}
+
+function schedulePersist(delay=650){
+  markDirty();
+}
+
 async function persistSelection(){
   try{ localStorage.setItem('kr_selected_person', currentPersonId||''); }
   catch(e){ console.error('persistSelection error', e); }
@@ -933,7 +1046,8 @@ function buildCompareRows(storyId){
     const r = data.ratings[p.id] && data.ratings[p.id][storyId];
     const read = r && r.read;
     const avg = avgOf(p.id, storyId);
-    const favNames = favoriteNamesOf(r);
+    const story = data.stories.find(x=>x.id===storyId);
+    const favNames = favoriteNamesOf(r, story);
     const match = currentPersonId ? favoriteMatchPercent(currentPersonId, p.id) : null;
     return `
       <div class="compare-row">
@@ -942,7 +1056,7 @@ function buildCompareRows(storyId){
           <span class="compare-read ${read?'yes':''}">${read?'прочитано':'не читала'}</span>
           ${favNames.length ? `<span class="compare-fav">★ ${escapeHtml(favNames.join(', '))}</span>` : ''}
         </div>
-        ${avg!==null ? `<div class="avg-badge" style="padding:3px 8px;"><b>${formatScore(avg)}</b><span>${overallWord(avg)}</span></div>` : `<span class="compare-none">без оценки</span>`}
+        ${avg!==null ? `<div class="avg-badge" data-rating-summary style="padding:3px 8px;"><b>${formatScore(avg)}</b><span>${overallWord(avg)}</span></div>` : `<span class="compare-none">без оценки</span>`}
       </div>`;
   }).join('');
 }
@@ -1320,6 +1434,8 @@ async function updateAuthor(id, val){
 async function updateStoryDescription(id, val){ if(!isCurrentAdmin()) return; const s=data.stories.find(x=>x.id===id); if(s){ s.description=val; await persist(); render(); if(document.getElementById('storyInfoBackdrop')?.classList.contains('show')) openStoryInfo(id); } }
 async function updateStoryGenres(id, val){ if(!isCurrentAdmin()) return; const s=data.stories.find(x=>x.id===id); if(s){ s.genres=String(val||'').split(',').map(x=>x.trim()).filter(Boolean); await persist(); render(); if(document.getElementById('storyInfoBackdrop')?.classList.contains('show')) openStoryInfo(id); } }
 async function updateStoryCover(id, val){ if(!isCurrentAdmin()) return; const s=data.stories.find(x=>x.id===id); if(s){ s.cover=String(val||'').trim(); await persist(); render(); if(document.getElementById('storyInfoBackdrop')?.classList.contains('show')) openStoryInfo(id); } }
+async function updateStorySeasons(id,val){ if(!isCurrentAdmin()) return; const s=data.stories.find(x=>x.id===id); if(s){ s.seasons=String(val||'').trim(); await persist(); } }
+async function updateStoryEpisodes(id,val){ if(!isCurrentAdmin()) return; const s=data.stories.find(x=>x.id===id); if(s){ s.episodes=String(val||'').trim(); await persist(); } }
 async function handleStoryCoverFile(id, file){
   if(!isCurrentAdmin() || !file) return;
   if(!file.type.startsWith('image/')){ alert('Выбери изображение'); return; }
@@ -1366,6 +1482,8 @@ function toggleOpen(id){ openId = openId===id ? null : id; render(); }
 
 async function toggleRead(storyId, checked){
   if(!canEdit()) return;
+  const story = data.stories.find(x=>x.id===storyId);
+  if(story && story.status==='ongoing') return;
   const r = ensureRatings(currentPersonId, storyId);
   r.read = checked;
   if(checked) r.inProgress = false;
@@ -1382,11 +1500,33 @@ async function toggleInProgress(storyId, checked){
   renderStats();
   schedulePersist();
 }
+let ratingUiFrame = null;
+function refreshRatingUI(storyId){
+  if(ratingUiFrame) cancelAnimationFrame(ratingUiFrame);
+  ratingUiFrame = requestAnimationFrame(()=>{
+    ratingUiFrame = null;
+    const card = document.getElementById('card-'+storyId);
+    if(!card || !currentPersonId) return;
+    const avg = avgOf(currentPersonId, storyId);
+    const badge = card.querySelector('[data-rating-summary]');
+    if(badge){
+      badge.innerHTML = avg!==null
+        ? `<b>${formatScore(avg)}</b><span>${overallWord(avg)}</span>`
+        : `<span class="compare-none">без оценки</span>`;
+    }
+    card.querySelectorAll('[data-mod-field]').forEach(btn=>{
+      const key = btn.dataset.critKey;
+      const mod = btn.dataset.modField;
+      const entry = data.ratings[currentPersonId]?.[storyId]?.crit?.[key];
+      btn.classList.toggle('on', !!entry && entry.mod===mod);
+    });
+  });
+}
 async function updateCrit(storyId, key, field, val){
   if(!canEdit()) return;
   const r = ensureRatings(currentPersonId, storyId);
   r.crit[key][field] = val;
-  renderList();
+  refreshRatingUI(storyId);
   schedulePersist();
 }
 async function updateExtraFavoriteCrit(storyId, criterionId, field, val){
@@ -1396,7 +1536,7 @@ async function updateExtraFavoriteCrit(storyId, criterionId, field, val){
   const r = ensureRatings(currentPersonId, storyId);
   ensureExtraFavoriteRatings(r, story);
   r.crit[criterionId][field] = val;
-  renderList();
+  refreshRatingUI(storyId);
   schedulePersist();
 }
 async function toggleExtraFavoriteName(storyId, criterionId, val){
@@ -1436,13 +1576,20 @@ async function removeExtraFavoriteCriterion(storyId, criterionId){
 }
 async function toggleFavName(storyId, val){
   if(!canEdit()) return;
+  const story = data.stories.find(x=>x.id===storyId);
+  if(!story) return;
   const r = ensureRatings(currentPersonId, storyId);
-  const current = favoriteNamesOf(r);
+  const current = favoriteNamesOf(r, story);
+  const limit = favoriteSelectionLimit(story);
   if(!val){
     setFavoriteNames(r, []);
+  } else if(current.includes(val)){
+    setFavoriteNames(r, current.filter(n=>n!==val));
+  } else if(current.length < limit){
+    setFavoriteNames(r, [...current, val]);
   } else {
-    const next = current.includes(val) ? current.filter(n=>n!==val) : [...current, val];
-    setFavoriteNames(r, next);
+    // Ничего не меняем: пользователь уже выбрал допустимое количество.
+    return;
   }
   renderList();
   schedulePersist();
@@ -1608,7 +1755,7 @@ function personFavorites(personId){
   const out = [];
   data.stories.forEach(s=>{
     const r = data.ratings[personId] && data.ratings[personId][s.id];
-    const names = favoriteNamesOf(r);
+    const names = favoriteNamesOf(r, s);
     names.forEach(name=>{ if(name) out.push({ story: s, storyTitle: s.title, name }); });
   });
   return out;
@@ -1688,8 +1835,8 @@ function renderList(){
         <div class="crit-name">${escapeHtml(favoriteCriterion.label)}</div>
         <div class="crit-controls">
           <select ${canEdit()?'':'disabled'} onchange="updateCrit('${s.id}','favorite','base',this.value)">${selectOptions(entry.base, baseOpts)}</select>
-          <button class="mod-btn ${entry.mod==='-'?'on':''}" ${canEdit()?'':'disabled'} onclick="updateCrit('${s.id}','favorite','mod','${nextMinus}')">−</button>
-          <button class="mod-btn ${entry.mod==='+'?'on':''}" ${canEdit()?'':'disabled'} onclick="updateCrit('${s.id}','favorite','mod','${nextPlus}')">+</button>
+          <button class="mod-btn ${entry.mod==='-'?'on':''}" data-rating-story="${s.id}" data-crit-key="favorite" data-mod-field="-" ${canEdit()?'':'disabled'} onclick="updateCrit('${s.id}','favorite','mod','${nextMinus}')">−</button>
+          <button class="mod-btn ${entry.mod==='+'?'on':''}" data-rating-story="${s.id}" data-crit-key="favorite" data-mod-field="+" ${canEdit()?'':'disabled'} onclick="updateCrit('${s.id}','favorite','mod','${nextPlus}')">+</button>
           ${isCurrentAdmin()?`<button class="crit-fav-add" title="Добавить ещё один критерий фаворита" onclick="event.stopPropagation();addExtraFavoriteCriterion('${s.id}')">+</button>`:''}
         </div>
       </div>`);
@@ -1702,8 +1849,8 @@ function renderList(){
         <div class="crit-name"></div>
         <div class="crit-controls">
           <select ${canEdit()?'':'disabled'} onchange="updateExtraFavoriteCrit('${s.id}','${c.key}','base',this.value)">${selectOptions(entry.base, baseOpts)}</select>
-          <button class="mod-btn ${entry.mod==='-'?'on':''}" ${canEdit()?'':'disabled'} onclick="updateExtraFavoriteCrit('${s.id}','${c.key}','mod','${nextMinus}')">−</button>
-          <button class="mod-btn ${entry.mod==='+'?'on':''}" ${canEdit()?'':'disabled'} onclick="updateExtraFavoriteCrit('${s.id}','${c.key}','mod','${nextPlus}')">+</button>
+          <button class="mod-btn ${entry.mod==='-'?'on':''}" data-rating-story="${s.id}" data-crit-key="${c.key}" data-mod-field="-" ${canEdit()?'':'disabled'} onclick="updateExtraFavoriteCrit('${s.id}','${c.key}','mod','${nextMinus}')">−</button>
+          <button class="mod-btn ${entry.mod==='+'?'on':''}" data-rating-story="${s.id}" data-crit-key="${c.key}" data-mod-field="+" ${canEdit()?'':'disabled'} onclick="updateExtraFavoriteCrit('${s.id}','${c.key}','mod','${nextPlus}')">+</button>
           ${isCurrentAdmin()?`<button class="crit-fav-remove" title="Удалить дополнительное место для оценки" onclick="event.stopPropagation();removeExtraFavoriteCriterion('${s.id}','${c.key}')">×</button>`:''}
         </div>
       </div>`);
@@ -1719,8 +1866,8 @@ function renderList(){
         <div class="crit-name">${escapeHtml(c.label)}</div>
         <div class="crit-controls">
           <select ${canEdit()?'':'disabled'} onchange="updateCrit('${s.id}','${c.key}','base',this.value)">${selectOptions(entry.base, baseOpts)}</select>
-          <button class="mod-btn ${entry.mod==='-'?'on':''}" ${canEdit()?'':'disabled'} onclick="updateCrit('${s.id}','${c.key}','mod','${nextMinus}')">−</button>
-          <button class="mod-btn ${entry.mod==='+'?'on':''}" ${canEdit()?'':'disabled'} onclick="updateCrit('${s.id}','${c.key}','mod','${nextPlus}')">+</button>
+          <button class="mod-btn ${entry.mod==='-'?'on':''}" data-rating-story="${s.id}" data-crit-key="${c.key}" data-mod-field="-" ${canEdit()?'':'disabled'} onclick="updateCrit('${s.id}','${c.key}','mod','${nextMinus}')">−</button>
+          <button class="mod-btn ${entry.mod==='+'?'on':''}" data-rating-story="${s.id}" data-crit-key="${c.key}" data-mod-field="+" ${canEdit()?'':'disabled'} onclick="updateCrit('${s.id}','${c.key}','mod','${nextPlus}')">+</button>
         </div>
       </div>`;
     }).join('');
@@ -1728,8 +1875,9 @@ function renderList(){
     const otherRowsAfter = renderOtherCriteria(otherCriteriaAfter);
 
     const chars = [...(s.favoriteNames||[])];
-    const selected = favoriteNamesOf(r);
+    const selected = favoriteNamesOf(r, s);
     const editable = canEdit();
+    const favLimit = favoriteSelectionLimit(s);
     const favGallery = `<div class="char-gallery favorite-gallery">
       ${chars.map(ch=>{
         const click = `toggleFavName('${s.id}', ${jsString(ch.name)})`;
@@ -1743,7 +1891,7 @@ function renderList(){
           <div class="char-name">${escapeHtml(ch.name)}</div>
         </div>`;
       }).join('')}
-    </div>`;
+    </div>${editable && favLimit > 1 ? `<div class="fav-selection-note">Можно выбрать до ${favLimit} фаворитов</div>` : ''}`;
     const favAdmin = isCurrentAdmin() ? `<div style="margin-top:7px;"><button class="filter-btn" onclick="openAddFavForm('${s.id}')">+ Добавить персонажа</button></div>` : '';
     const critRows = otherRowsBefore + favoriteRows.join('') + favGallery + favAdmin + otherRowsAfter;
 
@@ -1759,7 +1907,7 @@ function renderList(){
       <div class="story ${isOpen?'open':''} ${isCurrentAdmin()?'admin-reorder':''}" id="card-${s.id}" data-story-id="${s.id}">
         <div class="story-head" style="--status-color:${statusColor}">
           <div class="check-stack">
-            <button class="checkbox-read ${read?'checked':''}" ${canEdit()?'':'disabled'} onclick="event.stopPropagation(); toggleRead('${s.id}', ${!read})">${read?'✓':''}</button>
+            ${s.status==='ongoing' ? '' : `<button class="checkbox-read ${read?'checked':''}" ${canEdit()?'':'disabled'} onclick="event.stopPropagation(); toggleRead('${s.id}', ${!read})">${read?'✓':''}</button>`}
             <button class="checkbox-progress ${inProgress?'checked':''}" ${canEdit()?'':'disabled'} onclick="event.stopPropagation(); toggleInProgress('${s.id}', ${!inProgress})" title="В процессе чтения">${inProgress?'…':''}</button>
           </div>
           <div class="story-main" onclick="toggleOpen('${s.id}')">
@@ -1768,10 +1916,10 @@ function renderList(){
                 <div class="story-title">${escapeHtml(s.title)}</div>
                 ${s.author ? `<div class="story-author">${escapeHtml(s.author)}</div>` : ''}
               </div>
-              ${avg!==null ? `<div class="avg-badge"><b>${formatScore(avg)}</b><span>${overallWord(avg)}</span></div>` : ''}
+              ${avg!==null ? `<div class="avg-badge" data-rating-summary><b>${formatScore(avg)}</b><span>${overallWord(avg)}</span></div>` : ''}
             </div>
             <div class="meta-row">
-              ${favoriteNamesOf(r).map(name=>favBadgeHtml(s, name)).join('')}
+              ${favoriteNamesOf(r, s).map(name=>favBadgeHtml(s, name)).join('')}
               ${r && r.notes ? `<div class="note-tag">${escapeHtml(r.notes)}</div>` : ''}
             </div>
           </div>
@@ -2037,7 +2185,7 @@ function renderStoryOpinionsPanel(){
   data.stories.forEach(s=>{
     const r=data.ratings[currentPersonId] && data.ratings[currentPersonId][s.id];
     const score=avgOf(currentPersonId,s.id);
-    const favs=favoriteNamesOf(r);
+    const favs=favoriteNamesOf(r, s);
     const note=r && r.notes ? String(r.notes).trim() : '';
     if(score===null && !favs.length && !note) return;
     rows.push({s,score,favs,note});
@@ -2085,13 +2233,23 @@ function renderProfileFavoritesPanel(){
 }
 
 function storyShelfPeople(storyId){
+  const story=data.stories.find(x=>x.id===storyId);
+  const ongoing=story?.status==='ongoing';
   return data.people.map(p=>{
     const r=data.ratings[p.id] && data.ratings[p.id][storyId];
-    if(!r || (!r.read && !r.inProgress)) return null;
+    if(!r) return null;
+    // Для выходящей истории старый флаг read не считается действующим статусом.
+    // Показываем человека на полке только если он действительно сейчас читает.
+    if(ongoing){
+      if(!r.inProgress) return null;
+    } else if(!r.read && !r.inProgress) return null;
     return {p,r};
   }).filter(Boolean);
 }
-function storyStatusLabel(r){
+function storyStatusLabel(r, story){
+  if(story?.status==='ongoing'){
+    return r.inProgress ? {text:'📖 читает', cls:''} : {text:'', cls:''};
+  }
   if(r.read) return {text:'✓ прочитано', cls:'read'};
   if(r.inProgress) return {text:'📖 читает', cls:''};
   return {text:'', cls:''};
@@ -2110,9 +2268,19 @@ function openStoryInfo(storyId){
       <div>
         <div class="story-info-title">${escapeHtml(s.title)}</div>
         ${s.author?`<div class="story-info-author">${escapeHtml(s.author)}</div>`:''}
+        ${isCurrentAdmin()?`<div class="story-format-grid">
+          <div class="story-format-field">
+            <label class="story-format-label" for="storySeasonsEdit">Сезонов</label>
+            <input class="story-format-input" id="storySeasonsEdit" type="text" inputmode="numeric" placeholder="Например, 3" value="${escapeHtml(s.seasons||'')}">
+          </div>
+          <div class="story-format-field">
+            <label class="story-format-label" for="storyEpisodesEdit">Серий</label>
+            <input class="story-format-input" id="storyEpisodesEdit" type="text" inputmode="numeric" placeholder="Например, 42" value="${escapeHtml(s.episodes||'')}">
+          </div>
+        </div>`:''}
       </div>
     </div>
-    <div class="story-info-section">
+        <div class="story-info-section">
       <div class="story-info-label">Жанр</div>
       ${genres.length?`<div class="story-info-genres">${genres.map(g=>`<span class="story-info-genre">${escapeHtml(g)}</span>`).join('')}</div>`:'<div class="story-info-empty">Не указан.</div>'}
     </div>
@@ -2122,7 +2290,7 @@ function openStoryInfo(storyId){
     </div>
     <div class="story-info-section story-info-people">
       <div class="story-info-label">На полке у</div>
-      ${people.length ? people.map(({p,r})=>{const st=storyStatusLabel(r); return `<div class="story-info-person"><span class="story-info-person-name">${escapeHtml(p.name)}</span><span class="story-info-status ${st.cls}">${st.text}</span></div>`}).join('') : '<div class="story-info-empty">Пока никто не отметил эту историю.</div>'}
+      ${people.length ? people.map(({p,r})=>{const st=storyStatusLabel(r,s); return `<div class="story-info-person"><span class="story-info-person-name">${escapeHtml(p.name)}</span><span class="story-info-status ${st.cls}">${st.text}</span></div>`}).join('') : '<div class="story-info-empty">Пока никто не отметил эту историю.</div>'}
     </div>
     ${isCurrentAdmin()?`<div class="story-info-admin">
       <div class="story-info-label">Редактирование описания</div>
@@ -2140,6 +2308,8 @@ function openStoryInfo(storyId){
   if(isCurrentAdmin()){
     document.getElementById('storyDescEdit').addEventListener('change',e=>updateStoryDescription(storyId,e.target.value));
     document.getElementById('storyGenresEdit').addEventListener('change',e=>updateStoryGenres(storyId,e.target.value));
+    document.getElementById('storySeasonsEdit')?.addEventListener('change',e=>updateStorySeasons(storyId,e.target.value));
+    document.getElementById('storyEpisodesEdit')?.addEventListener('change',e=>updateStoryEpisodes(storyId,e.target.value));
     document.getElementById('storyCoverFileModal').addEventListener('change',e=>{
       const file=e.target.files && e.target.files[0];
       if(file) handleStoryCoverFile(storyId,file);
@@ -2311,7 +2481,7 @@ function renderAdmin(){
     const peopleRows = data.people.map(p=>{
       const r = data.ratings[p.id] && data.ratings[p.id][s.id];
       const pAvg = avgOf(p.id, s.id);
-      const favNames = favoriteNamesOf(r);
+      const favNames = favoriteNamesOf(r, s);
       const hasContent = !!(favNames.length || (r && r.notes) || pAvg!==null);
       return { p, r, pAvg, favNames, hasContent };
     }).filter(x=>x.hasContent).map(({p, favNames, r, pAvg})=>{
@@ -2366,8 +2536,8 @@ function favoriteMatchPercent(personIdA, personIdB){
   data.stories.forEach(s=>{
     const ra = data.ratings[personIdA] && data.ratings[personIdA][s.id];
     const rb = data.ratings[personIdB] && data.ratings[personIdB][s.id];
-    const favA = new Set(favoriteNamesOf(ra).map(norm).filter(Boolean));
-    const favB = new Set(favoriteNamesOf(rb).map(norm).filter(Boolean));
+    const favA = new Set(favoriteNamesOf(ra, s).map(norm).filter(Boolean));
+    const favB = new Set(favoriteNamesOf(rb, s).map(norm).filter(Boolean));
     // Считаем только истории, где хотя бы у одного человека выбран фаворит.
     // Так 1 случайный общий фаворит не превращает совпадение в 100%.
     if(!favA.size && !favB.size) return;
@@ -2393,7 +2563,7 @@ function openPersonStoryDetail(personId, storyId){
   const critRows = detailCriteria.map(c=>{
     const entry = (r && r.crit[c.key]) || {base:'',mod:'',name:'',names:[]};
     const scoreTxt = entry.base ? entry.base + (entry.mod||'') : '—';
-    const favNames = c.key==='favorite' ? favoriteNamesOf(r) : (c.extraFavorite ? extraFavoriteNamesOf(entry) : []);
+    const favNames = c.key==='favorite' ? favoriteNamesOf(r, s) : (c.extraFavorite ? extraFavoriteNamesOf(entry) : []);
     const favBit = (c.key==='favorite' || c.extraFavorite) && favNames.length ? ` — ♥ ${escapeHtml(favNames.join(', '))}` : '';
     return `<div class="crit-row"><div class="crit-name">${escapeHtml(c.label)}</div><div style="font-family:'Manrope',sans-serif;font-size:12.5px;color:var(--text);">${scoreTxt}${favBit}</div></div>`;
   }).join('');
