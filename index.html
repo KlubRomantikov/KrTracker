@@ -256,6 +256,7 @@
   .status-toggle button{font-family:'Manrope',sans-serif;font-size:10.5px;letter-spacing:.03em;padding:5px 12px;border-radius:20px;border:1px solid var(--line);background:transparent;color:var(--text-dim);cursor:pointer;text-align:left;}
   .status-toggle button.on.done{color:var(--gold);border-color:rgba(205,168,106,0.6);background:rgba(205,168,106,0.1);}
   .status-toggle button.on.ongoing{color:var(--mint);border-color:rgba(159,214,201,0.55);background:rgba(159,214,201,0.1);}
+  .status-toggle button.on.paused{color:var(--rose);border-color:rgba(192,118,144,0.55);background:rgba(192,118,144,0.12);}
   .status-toggle button.ongoing::before{content:'';display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--mint);box-shadow:0 0 6px 1px var(--mint);margin-right:6px;}
 
   .title-edit-row{display:flex;gap:8px;margin-bottom:10px;}
@@ -322,11 +323,12 @@
     </div>
   </div>
 
-<div class="wrap" id="mainView">
   <div id="saveBanner" class="save-banner" style="display:none;">
     <span id="saveBannerText">Сохранено</span>
     <button id="retrySaveBtn" style="display:none;">Повторить сейчас</button>
   </div>
+
+<div class="wrap" id="mainView">
   <div class="eyebrow">Клуб Романтики · общий стеллаж</div>
   <h1>Стеллаж историй</h1>
   <p class="sub" id="introSub">Отмечай прочитанное, оценивай по критериям — мнения всех видны всем.</p>
@@ -423,6 +425,14 @@
 
 <script>
 const MASTER_ADMIN_KEY = 'lunaклуб2026';
+function pluralRu(n, one, few, many){
+  n = Math.abs(Number(n)) || 0;
+  const n10 = n % 10, n100 = n % 100;
+  if(n100>=11 && n100<=14) return many;
+  if(n10===1) return one;
+  if(n10>=2 && n10<=4) return few;
+  return many;
+}
 const CRITERIA = [
   {key:'idea', label:'Задумка'},
   {key:'execution', label:'Исполнение'},
@@ -937,6 +947,8 @@ function updateSaveBanner(state = saveState){
   const text = el.querySelector('span');
   const btn = el.querySelector('button');
   el.dataset.state = state;
+  el.classList.remove('save-ok','save-working','save-error');
+  el.classList.add(state==='saving' ? 'save-working' : state==='saved' ? 'save-ok' : 'save-error');
   el.style.display = 'flex';
 
   if(state === 'saving'){
@@ -1480,8 +1492,8 @@ async function updateAuthor(id, val){
 async function updateStoryDescription(id, val){ if(!isCurrentAdmin()) return; const s=data.stories.find(x=>x.id===id); if(s){ s.description=val; await persist(); render(); if(document.getElementById('storyInfoBackdrop')?.classList.contains('show')) openStoryInfo(id); } }
 async function updateStoryGenres(id, val){ if(!isCurrentAdmin()) return; const s=data.stories.find(x=>x.id===id); if(s){ s.genres=String(val||'').split(',').map(x=>x.trim()).filter(Boolean); await persist(); render(); if(document.getElementById('storyInfoBackdrop')?.classList.contains('show')) openStoryInfo(id); } }
 async function updateStoryCover(id, val){ if(!isCurrentAdmin()) return; const s=data.stories.find(x=>x.id===id); if(s){ s.cover=String(val||'').trim(); await persist(); render(); if(document.getElementById('storyInfoBackdrop')?.classList.contains('show')) openStoryInfo(id); } }
-async function updateStorySeasons(id,val){ if(!isCurrentAdmin()) return; const s=data.stories.find(x=>x.id===id); if(s){ s.seasons=String(val||'').trim(); await persist(); } }
-async function updateStoryEpisodes(id,val){ if(!isCurrentAdmin()) return; const s=data.stories.find(x=>x.id===id); if(s){ s.episodes=String(val||'').trim(); await persist(); } }
+async function updateStorySeasons(id,val){ if(!isCurrentAdmin()) return; const s=data.stories.find(x=>x.id===id); if(s){ s.seasons=String(val||'').trim(); updateSaveBanner('saving'); await persist(); } }
+async function updateStoryEpisodes(id,val){ if(!isCurrentAdmin()) return; const s=data.stories.find(x=>x.id===id); if(s){ s.episodes=String(val||'').trim(); updateSaveBanner('saving'); await persist(); } }
 async function handleStoryCoverFile(id, file){
   if(!isCurrentAdmin() || !file) return;
   if(!file.type.startsWith('image/')){ alert('Выбери изображение'); return; }
@@ -1987,6 +1999,7 @@ function renderList(){
             <div class="status-block-label">Статус истории</div>
             <div class="status-toggle">
               <button class="ongoing ${s.status==='ongoing'?'on':''}" ${isCurrentAdmin()?'':'disabled'} onclick="updateStatus('${s.id}','ongoing')">выходит</button>
+              <button class="paused ${s.status==='paused'?'on':''}" ${isCurrentAdmin()?'':'disabled'} onclick="updateStatus('${s.id}','paused')">приостановлена</button>
               <button class="done ${s.status==='done'?'on':''}" ${isCurrentAdmin()?'':'disabled'} onclick="updateStatus('${s.id}','done')">завершена</button>
             </div>
           </div>
@@ -2314,6 +2327,14 @@ function openStoryInfo(storyId){
       <div>
         <div class="story-info-title">${escapeHtml(s.title)}</div>
         ${s.author?`<div class="story-info-author">${escapeHtml(s.author)}</div>`:''}
+        ${(()=>{
+          const seasonsNum = parseInt(s.seasons,10);
+          const episodesNum = parseInt(s.episodes,10);
+          const seasonsText = s.seasons ? (Number.isFinite(seasonsNum) ? `${seasonsNum} ${pluralRu(seasonsNum,'сезон','сезона','сезонов')}` : escapeHtml(s.seasons)) : '';
+          const episodesText = s.episodes ? (Number.isFinite(episodesNum) ? `${episodesNum} ${pluralRu(episodesNum,'серия','серии','серий')}` : escapeHtml(s.episodes)) : '';
+          const summary = [seasonsText, episodesText].filter(Boolean).join(' · ');
+          return summary ? `<div class="story-info-author" style="margin-top:2px;">${summary}</div>` : '';
+        })()}
         ${isCurrentAdmin()?`<div class="story-format-grid">
           <div class="story-format-field">
             <label class="story-format-label" for="storySeasonsEdit">Сезонов</label>
