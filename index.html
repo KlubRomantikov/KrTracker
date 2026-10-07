@@ -121,76 +121,12 @@
   .file-btn{font-family:'Manrope',sans-serif;font-size:11.5px;color:var(--text-dim);border:1px solid var(--line);padding:7px 12px;border-radius:20px;cursor:pointer;background:none;}
   .form-actions{display:flex;gap:8px;}
 
-  /* shelf */
-  .shelf-label{display:flex;justify-content:space-between;font-family:'Manrope',sans-serif;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--text-dim);margin-bottom:10px;}
-  .shelf-wrap{position:relative;margin-bottom:22px;}
-  .shelf{position:relative;display:flex;align-items:flex-end;gap:5px;min-height:194px;padding:0 8px 14px;overflow-x:auto;scrollbar-width:none;margin-bottom:0;overscroll-behavior-x:contain;scroll-snap-type:x proximity;}
-  .shelf::-webkit-scrollbar{display:none;}
-  .shelf-board{position:absolute;left:0;right:0;bottom:0;height:3px;background:linear-gradient(90deg, transparent, var(--gold), transparent);box-shadow:0 0 12px 1px var(--gold-soft);z-index:3;pointer-events:none;}
-  .spine{flex:0 0 auto;width:44px;min-width:44px;border-radius:5px 5px 2px 2px;position:relative;z-index:1;cursor:pointer;box-sizing:border-box;box-shadow:inset 1px 0 rgba(255,255,255,.18),inset -1px 0 rgba(0,0,0,.16),0 -1px 0 rgba(255,255,255,.08);transition:transform .16s ease,filter .16s ease;scroll-snap-align:start;overflow:hidden;}
-  .spine:hover{transform:translateY(-4px);filter:brightness(1.08);}
-  .spine::before,.spine::after{content:'';position:absolute;left:5px;right:5px;height:2px;border-top:1px solid rgba(255,255,255,.22);border-bottom:1px solid rgba(0,0,0,.14);opacity:.8;}
-  .spine::before{top:7px;}
-  .spine::after{bottom:7px;}
-  .spine-title{position:absolute;inset:15px 5px;display:flex;align-items:center;justify-content:center;color:rgba(255,248,239,.96);font-family:'Cormorant Garamond',serif;font-size:10px;font-weight:600;line-height:1.08;letter-spacing:.01em;writing-mode:vertical-rl;transform:rotate(180deg);text-align:left;overflow:hidden;white-space:normal;word-break:break-word;text-shadow:0 1px 2px rgba(0,0,0,.35);pointer-events:none;}
-  .spine.unread{box-shadow:inset 1px 0 rgba(255,255,255,.12),inset -1px 0 rgba(0,0,0,.14);}
-  .spine.unread .spine-title{color:rgba(255,248,239,.96);}
-  .spine.done{background:var(--gold);}
-  .spine.ongoing{background:var(--mint);}
-  .spine.done .spine-title,.spine.ongoing .spine-title{color:#24182e;text-shadow:none;}
   .emo-chip.good{color:#7fce8f;border-color:rgba(127,206,143,.42);background:rgba(127,206,143,.10);}
   .emo-chip.neutral{color:#ece6f5;border-color:rgba(236,230,245,.38);background:rgba(236,230,245,.08);}
   .emo-chip.bad{color:#d07d9a;border-color:rgba(208,125,154,.42);background:rgba(208,125,154,.10);}
   .emo-chip.good.on{color:#17231a;border-color:#7fce8f;background:#7fce8f;}
   .emo-chip.neutral.on{color:#1b1430;border-color:#ece6f5;background:#ece6f5;}
   .emo-chip.bad.on{color:#24182e;border-color:#d07d9a;background:#d07d9a;}
-  .shelf-scroll-hint{position:absolute;right:8px;bottom:18px;z-index:5;display:flex;align-items:center;gap:5px;padding:5px 9px;border:1px solid rgba(205,168,106,.45);border-radius:999px;background:rgba(22,15,37,.9);color:var(--gold);font-family:'Manrope',sans-serif;font-size:10px;letter-spacing:.03em;box-shadow:0 5px 16px rgba(0,0,0,.28);pointer-events:none;animation:shelfHintPulse 2.2s ease-in-out infinite;}
-  .shelf-scroll-hint .arrows{font-size:15px;line-height:1;letter-spacing:-3px;}
-  .shelf-scroll-hint.hidden{display:none;}
-  .shelf-wrap.scrolled .shelf-scroll-hint{opacity:.28;animation:none;}
-  @keyframes shelfHintPulse{0%,100%{opacity:.72;transform:translateX(0)}50%{opacity:1;transform:translateX(-3px)}}
-  .shelf-empty{font-size:12.5px;color:var(--text-dim);font-style:italic;padding:14px 4px;}
-  .story-info-backdrop{position:fixed;inset:0;background:rgba(8,5,15,.68);backdrop-filter:blur(2px);z-index:90;display:none;align-items:center;justify-content:center;padding:16px;}
-  .story-info-backdrop.show{display:flex;animation:storyFadeIn .18s ease both;}
-  .story-info-modal{width:min(680px,100%);max-height:min(82vh,720px);overflow:auto;background:linear-gradient(180deg,#261b38,#171021);border:1px solid rgba(205,168,106,.42);border-radius:16px;box-shadow:0 20px 70px rgba(0,0,0,.58);position:relative;transform-origin:center bottom;animation:storyModalIn .24s cubic-bezier(.2,.8,.2,1) both;}
-  .story-info-close{position:absolute;right:10px;top:10px;width:32px;height:32px;border:1px solid rgba(236,230,245,.14);border-radius:50%;background:rgba(16,11,28,.7);color:var(--text-dim);font-size:18px;cursor:pointer;z-index:3;}
-  .story-info-close:hover{color:var(--gold);border-color:var(--gold-soft);}
-  .story-info-top{display:grid;grid-template-columns:150px 1fr;gap:18px;padding:18px 18px 14px;}
-  .story-info-cover{width:150px;height:210px;border-radius:9px;border:1px solid rgba(205,168,106,.32);background:linear-gradient(145deg,#392650,#171021);background-size:cover;background-position:center;display:flex;align-items:center;justify-content:center;color:rgba(205,168,106,.7);font-family:'Marcellus',serif;font-size:22px;box-shadow:0 8px 22px rgba(0,0,0,.3);overflow:hidden;}
-  .story-info-kicker{font-family:'Manrope',sans-serif;font-size:9px;text-transform:uppercase;letter-spacing:.12em;color:var(--gold);margin:3px 0 7px;}
-  .story-info-title{font-family:'Marcellus',serif;font-size:24px;line-height:1.12;color:var(--text);margin-bottom:5px;padding-right:30px;}
-  .story-info-author{font-size:12px;color:var(--text-dim);margin-bottom:10px;}
-  .story-info-genres{display:flex;gap:5px;flex-wrap:wrap;}
-  .story-info-genre{font-size:9.5px;color:var(--gold);border:1px solid rgba(205,168,106,.3);background:rgba(205,168,106,.07);padding:4px 7px;border-radius:999px;}
-  .story-info-section{padding:0 18px 12px;}
-  .story-format-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px;}
-  .story-format-field{min-width:0;}
-  .story-format-label{display:block;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:#bda66e;margin-bottom:7px;}
-  .story-format-input{width:100%;box-sizing:border-box;background:#1b1429;border:1px solid rgba(189,166,110,.28);border-radius:10px;color:#eee6f4;padding:11px 12px;font:inherit;outline:none;}
-  .story-format-input:focus{border-color:rgba(189,166,110,.65);}
-
-  .story-info-label{font-family:'Manrope',sans-serif;font-size:9px;text-transform:uppercase;letter-spacing:.09em;color:var(--gold);margin-bottom:7px;}
-  .story-info-description{font-size:12.5px;line-height:1.55;color:var(--text);white-space:pre-line;}
-  .story-info-people{border-top:1px solid var(--line);padding-top:13px;}
-  .story-info-person{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:4px 0;border-bottom:1px solid rgba(236,230,245,.06);font-size:11px;}
-  .story-info-person:last-child{border-bottom:0;}
-  .story-info-person-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-  .story-info-status{font-family:'Manrope',sans-serif;font-size:9.5px;white-space:nowrap;padding:4px 7px;border-radius:999px;background:rgba(159,214,201,.08);color:var(--mint);border:1px solid rgba(159,214,201,.2);}
-  .story-info-status.read{color:var(--gold);background:rgba(205,168,106,.08);border-color:rgba(205,168,106,.2);}
-  .story-info-empty{font-size:11.5px;color:var(--text-dim);font-style:italic;}
-  .story-info-admin{border-top:1px solid var(--line);padding:14px 18px 18px;}
-  .story-info-admin-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
-  .story-info-admin textarea,.story-info-admin input{width:100%;padding:8px 9px;border:1px solid var(--line);background:var(--bg-1);color:var(--text);border-radius:7px;font:12px 'Inter',sans-serif;}
-  .story-info-admin textarea{min-height:76px;resize:vertical;grid-column:1/-1;}
-  .story-cover-upload{display:flex;align-items:center;gap:9px;grid-column:1/-1;}
-  .story-cover-preview{width:48px;height:68px;border-radius:6px;border:1px dashed var(--text-dim);background:var(--bg-1);background-size:cover;background-position:center;display:flex;align-items:center;justify-content:center;color:var(--text-dim);font-size:18px;flex:0 0 auto;}
-  .story-cover-upload .file-btn{margin:0;}
-  .story-info-admin .admin-save-note{font-size:9.5px;color:var(--text-dim);margin-top:6px;}
-  @keyframes storyFadeIn{from{opacity:0}to{opacity:1}}
-  @keyframes storyModalIn{from{opacity:0;transform:translateY(12px) scale(.985)}to{opacity:1;transform:none}}
-  @media(max-width:560px){.story-info-top{grid-template-columns:120px 1fr;gap:12px}.story-info-cover{width:120px;height:170px}.story-info-title{font-size:20px}.story-info-admin-grid{grid-template-columns:1fr}.story-info-admin textarea{grid-column:auto}}
-
-
   .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:10px;overflow:hidden;margin-bottom:18px;}
   .stat{background:var(--card);padding:12px 8px;text-align:center;}
   .stat b{font-family:'Marcellus',serif;font-size:20px;display:block;color:var(--gold);font-weight:400;}
@@ -316,13 +252,6 @@
   } catch(e) {}
 </script>
 <body>
-  <div class="story-info-backdrop" id="storyInfoBackdrop" role="dialog" aria-modal="true" aria-hidden="true">
-    <div class="story-info-modal" id="storyInfoModal">
-      <button class="story-info-close" type="button" onclick="closeStoryInfo()" aria-label="Закрыть">×</button>
-      <div id="storyInfoContent"></div>
-    </div>
-  </div>
-
   <div id="saveBanner" class="save-banner" style="display:none;">
     <span id="saveBannerText">Сохранено</span>
     <button id="retrySaveBtn" style="display:none;">Повторить сейчас</button>
@@ -407,12 +336,6 @@
   <div class="eyebrow">Свод мнений</div>
   <h1 style="font-size:26px;">Общий рейтинг</h1>
   <p class="sub" id="ratingSub">Средний балл по всем, кто успел оценить.</p>
-
-  <div class="shelf-label"><span>Полка</span><span id="shelfCount">0 историй</span></div>
-  <div class="shelf-wrap" id="shelfWrap">
-    <div class="shelf" id="shelf"><div class="shelf-board"></div></div>
-    <div class="shelf-scroll-hint" aria-hidden="true"><span class="arrows">↔</span><span>листать</span></div>
-  </div>
 
   <div class="filters" style="margin-bottom:16px;">
     <button class="filter-btn" id="tabStories">Истории</button>
@@ -861,9 +784,11 @@ async function load(){
     }
     data.stories.forEach(s=>{
       if(!s.favoriteNames) { s.favoriteNames = []; migrated = true; }
-      if(typeof s.description !== 'string') { s.description = ''; migrated = true; }
-      if(!Array.isArray(s.genres)) { s.genres = []; migrated = true; }
-      if(typeof s.cover !== 'string') { s.cover = ''; migrated = true; }
+      // Удаляем только данные удалённой Полки/карточек.
+      // data.people и data.ratings (включая все оценки и анкеты) не трогаем.
+      ['description','genres','cover','seasons','episodes'].forEach(key=>{
+        if(Object.prototype.hasOwnProperty.call(s,key)){ delete s[key]; migrated = true; }
+      });
       if(!Array.isArray(s.extraFavoriteCriteria)) { s.extraFavoriteCriteria = []; migrated = true; }
       s.extraFavoriteCriteria.forEach(c=>{
         if(c.label !== 'Фаворит') { c.label = 'Фаворит'; migrated = true; }
@@ -940,6 +865,8 @@ let persistRunning = false;
 let persistQueued = false;
 let persistVersion = 0;
 let savedVersion = 0;
+let saveRetryTimer = null;
+let saveRetryCount = 0;
 
 function updateSaveBanner(state = saveState){
   const el = document.getElementById('saveBanner');
@@ -970,14 +897,17 @@ function markDirty(){
   persistVersion++;
   saveState = 'saving';
   saveFailed = false;
+  saveRetryCount = 0;
+  if(saveRetryTimer){ clearTimeout(saveRetryTimer); saveRetryTimer = null; }
   updateSaveBanner('saving');
 
   if(persistTimer) clearTimeout(persistTimer);
-  // Объединяем быстрые изменения, чтобы не отправлять базу после каждого клика.
+  // Объединяем быстрые изменения, но сохраняем быстрее — это уменьшает
+  // вероятность потерять последнее изменение при закрытии/обновлении.
   persistTimer = setTimeout(()=>{
     persistTimer = null;
     persist();
-  }, 650);
+  }, 300);
 }
 
 async function persist(){
@@ -1002,6 +932,8 @@ async function persist(){
 
     savedVersion = versionAtStart;
     saveFailed = false;
+    saveRetryCount = 0;
+    if(saveRetryTimer){ clearTimeout(saveRetryTimer); saveRetryTimer = null; }
 
     if(persistQueued || persistVersion !== savedVersion){
       persistQueued = false;
@@ -1017,12 +949,19 @@ async function persist(){
     saveFailed = true;
     saveState = 'error';
     updateSaveBanner('error');
+    // При кратком сбое сети автоматически повторяем запись.
+    if(saveRetryCount < 3){
+      saveRetryCount++;
+      const delay = [2000, 5000, 10000][saveRetryCount-1];
+      if(saveRetryTimer) clearTimeout(saveRetryTimer);
+      saveRetryTimer = setTimeout(()=>{ saveRetryTimer = null; persist(); }, delay);
+    }
   }finally{
     persistRunning = false;
   }
 }
 
-function schedulePersist(delay=650){
+function schedulePersist(delay=300){
   markDirty();
 }
 
@@ -1489,38 +1428,6 @@ async function updateAuthor(id, val){
   const s = data.stories.find(x=>x.id===id);
   if(s){ s.author = val; await persist(); render(); }
 }
-async function updateStoryDescription(id, val){ if(!isCurrentAdmin()) return; const s=data.stories.find(x=>x.id===id); if(s){ s.description=val; await persist(); render(); if(document.getElementById('storyInfoBackdrop')?.classList.contains('show')) openStoryInfo(id); } }
-async function updateStoryGenres(id, val){ if(!isCurrentAdmin()) return; const s=data.stories.find(x=>x.id===id); if(s){ s.genres=String(val||'').split(',').map(x=>x.trim()).filter(Boolean); await persist(); render(); if(document.getElementById('storyInfoBackdrop')?.classList.contains('show')) openStoryInfo(id); } }
-async function updateStoryCover(id, val){ if(!isCurrentAdmin()) return; const s=data.stories.find(x=>x.id===id); if(s){ s.cover=String(val||'').trim(); await persist(); render(); if(document.getElementById('storyInfoBackdrop')?.classList.contains('show')) openStoryInfo(id); } }
-async function updateStorySeasons(id,val){ if(!isCurrentAdmin()) return; const s=data.stories.find(x=>x.id===id); if(s){ s.seasons=String(val||'').trim(); updateSaveBanner('saving'); await persist(); } }
-async function updateStoryEpisodes(id,val){ if(!isCurrentAdmin()) return; const s=data.stories.find(x=>x.id===id); if(s){ s.episodes=String(val||'').trim(); updateSaveBanner('saving'); await persist(); } }
-async function handleStoryCoverFile(id, file){
-  if(!isCurrentAdmin() || !file) return;
-  if(!file.type.startsWith('image/')){ alert('Выбери изображение'); return; }
-  const reader=new FileReader();
-  reader.onload=(ev)=>{
-    const img=new Image();
-    img.onload=async()=>{
-      const maxW=360, maxH=520;
-      const scale=Math.min(maxW/img.width, maxH/img.height, 1);
-      const w=Math.max(1,Math.round(img.width*scale)), h=Math.max(1,Math.round(img.height*scale));
-      const canvas=document.createElement('canvas'); canvas.width=w; canvas.height=h;
-      const ctx=canvas.getContext('2d'); ctx.drawImage(img,0,0,w,h);
-      const s=data.stories.find(x=>x.id===id); if(!s) return;
-      s.cover=canvas.toDataURL('image/jpeg',0.84);
-      await persist();
-      render();
-      openStoryInfo(id);
-    };
-    img.src=ev.target.result;
-  };
-  reader.readAsDataURL(file);
-}
-async function removeStoryCover(id){
-  if(!isCurrentAdmin()) return;
-  const s=data.stories.find(x=>x.id===id); if(!s) return;
-  s.cover=''; await persist(); render(); openStoryInfo(id);
-}
 async function updateStatus(id, status){
   if(!isCurrentAdmin()) return;
   const s = data.stories.find(x=>x.id===id);
@@ -1669,48 +1576,6 @@ async function updateNotes(storyId, val){
 }
 
 /* ---------- rendering ---------- */
-function renderShelf(){
-  const shelf = document.getElementById('shelf');
-  document.getElementById('shelfCount').textContent = data.stories.length + ' ' + (data.stories.length===1?'история':'историй');
-  shelf.querySelectorAll('.spine').forEach(el=>el.remove());
-  const oldEmpty = shelf.querySelector('.shelf-empty');
-  if(oldEmpty) oldEmpty.remove();
-  if(data.stories.length===0){
-    const e = document.createElement('div'); e.className='shelf-empty'; e.textContent='Полка пуста';
-    shelf.appendChild(e); return;
-  }
-  data.stories.forEach((s, index)=>{
-    const spine = document.createElement('div');
-    const h = 145 + ((index * 17 + String(s.id).length * 7) % 31);
-    spine.className = 'spine ' + (s.status==='done' ? 'done' : 'ongoing');
-    spine.style.height = h+'px';
-    const title = document.createElement('span');
-    title.className = 'spine-title';
-    title.textContent = s.title;
-    spine.appendChild(title);
-    spine.title = s.title;
-    spine.setAttribute('aria-label','Открыть описание: '+s.title);
-    spine.addEventListener('click', (event)=>{ event.preventDefault(); event.stopPropagation(); openStoryInfo(s.id); });
-    shelf.appendChild(spine);
-  });
-  initShelfScrollHint();
-}
-
-function initShelfScrollHint(){
-  const shelf = document.getElementById('shelf');
-  const wrap = document.getElementById('shelfWrap');
-  if(!shelf || !wrap || shelf.dataset.hintBound === '1') return;
-  shelf.dataset.hintBound = '1';
-  const update = ()=>{
-    wrap.classList.toggle('scrolled', shelf.scrollLeft > 8);
-    const canScroll = shelf.scrollWidth > shelf.clientWidth + 8;
-    wrap.querySelector('.shelf-scroll-hint')?.classList.toggle('hidden', !canScroll);
-  };
-  shelf.addEventListener('scroll', update, {passive:true});
-  window.addEventListener('resize', update);
-  update();
-}
-
 function mixColor(t){
   const c1=[122,93,176], c2=[192,118,144];
   const r=Math.round(c1[0]+(c2[0]-c1[0])*t), g=Math.round(c1[1]+(c2[1]-c1[1])*t), b=Math.round(c1[2]+(c2[2]-c1[2])*t);
@@ -1990,11 +1855,7 @@ function renderList(){
             <input value="${escapeHtml(s.title)}" placeholder="название" onchange="updateTitle('${s.id}', this.value)">
             <input value="${escapeHtml(s.author)}" placeholder="автор(ы) через запятую" onchange="updateAuthor('${s.id}', this.value)">
           </div>
-          <div class="title-edit-row">
-            <input value="${escapeHtml((s.genres||[]).join(', '))}" placeholder="жанры через запятую" onchange="updateStoryGenres('${s.id}', this.value)">
-            <label class="file-btn" style="flex:1;text-align:center;">${s.cover?'Заменить обложку':'Добавить обложку'}<input type="file" accept="image/*" style="display:none;" onchange="handleStoryCoverFile('${s.id}', this.files[0])"></label>
-          </div>
-          <textarea style="width:100%;min-height:70px;margin-bottom:10px;padding:8px 9px;border:1px solid var(--line);background:var(--bg-1);color:var(--text);border-radius:7px;font:12px 'Inter',sans-serif;resize:vertical;" placeholder="Аннотация истории" onchange="updateStoryDescription('${s.id}', this.value)">${escapeHtml(s.description||'')}</textarea>` : ''}
+` : ''}
           <div class="status-block">
             <div class="status-block-label">Статус истории</div>
             <div class="status-toggle">
@@ -2291,108 +2152,9 @@ function renderProfileFavoritesPanel(){
     </div>`;
 }
 
-function storyShelfPeople(storyId){
-  const story=data.stories.find(x=>x.id===storyId);
-  const ongoing=story?.status==='ongoing';
-  return data.people.map(p=>{
-    const r=data.ratings[p.id] && data.ratings[p.id][storyId];
-    if(!r) return null;
-    // Для выходящей истории старый флаг read не считается действующим статусом.
-    // Показываем человека на полке только если он действительно сейчас читает.
-    if(ongoing){
-      if(!r.inProgress) return null;
-    } else if(!r.read && !r.inProgress) return null;
-    return {p,r};
-  }).filter(Boolean);
-}
-function storyStatusLabel(r, story){
-  if(story?.status==='ongoing'){
-    return r.inProgress ? {text:'📖 читает', cls:''} : {text:'', cls:''};
-  }
-  if(r.read) return {text:'✓ прочитано', cls:'read'};
-  if(r.inProgress) return {text:'📖 читает', cls:''};
-  return {text:'', cls:''};
-}
-function openStoryInfo(storyId){
-  const s=data.stories.find(x=>x.id===storyId); if(!s) return;
-  const backdrop=document.getElementById('storyInfoBackdrop');
-  const content=document.getElementById('storyInfoContent');
-  const people=storyShelfPeople(storyId);
-  const genres=Array.isArray(s.genres)?s.genres:[];
-  const initials=(s.title||'?').trim().slice(0,1).toUpperCase();
-  const cover=s.cover ? `background-image:url(${escapeHtml(s.cover)});` : '';
-  content.innerHTML=`
-    <div class="story-info-top">
-      <div class="story-info-cover" style="${cover}">${s.cover?'':escapeHtml(initials)}</div>
-      <div>
-        <div class="story-info-title">${escapeHtml(s.title)}</div>
-        ${s.author?`<div class="story-info-author">${escapeHtml(s.author)}</div>`:''}
-        ${(()=>{
-          const seasonsNum = parseInt(s.seasons,10);
-          const episodesNum = parseInt(s.episodes,10);
-          const seasonsText = s.seasons ? (Number.isFinite(seasonsNum) ? `${seasonsNum} ${pluralRu(seasonsNum,'сезон','сезона','сезонов')}` : escapeHtml(s.seasons)) : '';
-          const episodesText = s.episodes ? (Number.isFinite(episodesNum) ? `${episodesNum} ${pluralRu(episodesNum,'серия','серии','серий')}` : escapeHtml(s.episodes)) : '';
-          const summary = [seasonsText, episodesText].filter(Boolean).join(' · ');
-          return summary ? `<div class="story-info-author" style="margin-top:2px;">${summary}</div>` : '';
-        })()}
-        ${isCurrentAdmin()?`<div class="story-format-grid">
-          <div class="story-format-field">
-            <label class="story-format-label" for="storySeasonsEdit">Сезонов</label>
-            <input class="story-format-input" id="storySeasonsEdit" type="text" inputmode="numeric" placeholder="Например, 3" value="${escapeHtml(s.seasons||'')}">
-          </div>
-          <div class="story-format-field">
-            <label class="story-format-label" for="storyEpisodesEdit">Серий</label>
-            <input class="story-format-input" id="storyEpisodesEdit" type="text" inputmode="numeric" placeholder="Например, 42" value="${escapeHtml(s.episodes||'')}">
-          </div>
-        </div>`:''}
-      </div>
-    </div>
-        <div class="story-info-section">
-      <div class="story-info-label">Жанр</div>
-      ${genres.length?`<div class="story-info-genres">${genres.map(g=>`<span class="story-info-genre">${escapeHtml(g)}</span>`).join('')}</div>`:'<div class="story-info-empty">Не указан.</div>'}
-    </div>
-    <div class="story-info-section">
-      <div class="story-info-label">Аннотация</div>
-      <div class="story-info-description">${s.description?escapeHtml(s.description):'<span class="story-info-empty">Описание пока не добавлено.</span>'}</div>
-    </div>
-    <div class="story-info-section story-info-people">
-      <div class="story-info-label">На полке у</div>
-      ${people.length ? people.map(({p,r})=>{const st=storyStatusLabel(r,s); return `<div class="story-info-person"><span class="story-info-person-name">${escapeHtml(p.name)}</span><span class="story-info-status ${st.cls}">${st.text}</span></div>`}).join('') : '<div class="story-info-empty">Пока никто не отметил эту историю.</div>'}
-    </div>
-    ${isCurrentAdmin()?`<div class="story-info-admin">
-      <div class="story-info-label">Редактирование описания</div>
-      <div class="story-info-admin-grid">
-        <textarea id="storyDescEdit" placeholder="Аннотация истории...">${escapeHtml(s.description||'')}</textarea>
-        <input id="storyGenresEdit" value="${escapeHtml(genres.join(', '))}" placeholder="Жанры через запятую">
-        <div class="story-cover-upload">
-          <div class="story-cover-preview" id="storyCoverPreview" style="${s.cover?`background-image:url(${s.cover});`:''}">${s.cover?'':'📖'}</div>
-          <label class="file-btn">${s.cover?'Заменить обложку':'Добавить обложку'}<input type="file" accept="image/*" id="storyCoverFileModal" style="display:none;"></label>
-          ${s.cover?`<button type="button" class="filter-btn" id="storyCoverRemove">Удалить</button>`:''}
-        </div>
-      </div>
-      <div class="admin-save-note">Изменения сохраняются автоматически при потере фокуса.</div>
-    </div>`:''}`;
-  if(isCurrentAdmin()){
-    document.getElementById('storyDescEdit').addEventListener('change',e=>updateStoryDescription(storyId,e.target.value));
-    document.getElementById('storyGenresEdit').addEventListener('change',e=>updateStoryGenres(storyId,e.target.value));
-    document.getElementById('storySeasonsEdit')?.addEventListener('change',e=>updateStorySeasons(storyId,e.target.value));
-    document.getElementById('storyEpisodesEdit')?.addEventListener('change',e=>updateStoryEpisodes(storyId,e.target.value));
-    document.getElementById('storyCoverFileModal').addEventListener('change',e=>{
-      const file=e.target.files && e.target.files[0];
-      if(file) handleStoryCoverFile(storyId,file);
-    });
-    document.getElementById('storyCoverRemove')?.addEventListener('click',()=>removeStoryCover(storyId));
-  }
-  backdrop.classList.add('show'); backdrop.setAttribute('aria-hidden','false'); document.body.style.overflow='hidden';
-}
-function closeStoryInfo(){
-  const b=document.getElementById('storyInfoBackdrop'); if(!b) return;
-  b.classList.remove('show'); b.setAttribute('aria-hidden','true'); document.body.style.overflow='';
-}
 function render(){
   renderPeople();
   renderAdminPeoplePanel();
-  renderShelf();
   renderStats();
   renderAuthorRatingsPanel();
   renderStoryOpinionsPanel();
@@ -2573,7 +2335,7 @@ function renderAdmin(){
           <div class="story-main">
             <div class="story-top">
               <div>
-                <div class="story-title" style="cursor:pointer;" onclick="event.stopPropagation();openStoryInfo('${s.id}')">${escapeHtml(s.title)}</div>
+                <div class="story-title">${escapeHtml(s.title)}</div>
                 ${s.author ? `<div class="story-author">${escapeHtml(s.author)}</div>` : ''}
               </div>
               ${agg ? `<div class="avg-badge"><b>${formatScore(agg.avg)}</b><span>${overallWord(agg.avg)}</span></div>` : ''}
@@ -2777,8 +2539,6 @@ document.getElementById('tabAuthors').addEventListener('click', ()=> switchTab('
 document.getElementById('retrySaveBtn').addEventListener('click', persist);
 
 load();
-document.getElementById('storyInfoBackdrop')?.addEventListener('click',e=>{ if(e.target.id==='storyInfoBackdrop') closeStoryInfo(); });
-document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeStoryInfo(); });
 </script>
 </body>
 </html>
