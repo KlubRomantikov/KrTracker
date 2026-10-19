@@ -121,12 +121,8 @@
   .file-btn{font-family:'Manrope',sans-serif;font-size:11.5px;color:var(--text-dim);border:1px solid var(--line);padding:7px 12px;border-radius:20px;cursor:pointer;background:none;}
   .form-actions{display:flex;gap:8px;}
 
-  .emo-chip.good{color:#7fce8f;border-color:rgba(127,206,143,.42);background:rgba(127,206,143,.10);}
-  .emo-chip.neutral{color:#ece6f5;border-color:rgba(236,230,245,.38);background:rgba(236,230,245,.08);}
-  .emo-chip.bad{color:#d07d9a;border-color:rgba(208,125,154,.42);background:rgba(208,125,154,.10);}
-  .emo-chip.good.on{color:#17231a;border-color:#7fce8f;background:#7fce8f;}
-  .emo-chip.neutral.on{color:#1b1430;border-color:#ece6f5;background:#ece6f5;}
-  .emo-chip.bad.on{color:#24182e;border-color:#d07d9a;background:#d07d9a;}
+  .emo-chip.good,.emo-chip.neutral,.emo-chip.bad{color:var(--text-dim);border-color:var(--line);background:var(--bg-1);}
+  .emo-chip.on{color:var(--text);border-color:var(--gold);background:rgba(205,168,106,.12);box-shadow:inset 0 0 0 1px rgba(205,168,106,.18);}
   .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:10px;overflow:hidden;margin-bottom:18px;}
   .stat{background:var(--card);padding:12px 8px;text-align:center;}
   .stat b{font-family:'Marcellus',serif;font-size:20px;display:block;color:var(--gold);font-weight:400;}
@@ -171,9 +167,10 @@
   .story-top{display:flex;justify-content:space-between;gap:8px;align-items:flex-start;}
   .story-title{font-family:'Marcellus',serif;font-weight:400;font-size:16px;color:var(--text);}
   .story-author{font-size:11.5px;color:var(--text-dim);margin-top:2px;}
-  .avg-badge{display:flex;flex-direction:column;align-items:center;line-height:1.15;font-family:'Manrope',sans-serif;color:var(--bg-0);background:var(--gold);padding:4px 10px;border-radius:12px;white-space:nowrap;flex:0 0 auto;}
+  .avg-badge{display:flex;flex-direction:column;align-items:center;line-height:1.15;font-family:'Manrope',sans-serif;color:#21182B;background:var(--rating-color, var(--gold));padding:4px 10px;border-radius:12px;white-space:nowrap;flex:0 0 auto;}
   .avg-badge b{font-size:14px;font-weight:700;}
-  .avg-badge span{font-size:8.5px;text-transform:uppercase;letter-spacing:.03em;}
+  .avg-badge span{font-size:8.5px;text-transform:uppercase;letter-spacing:.03em;display:flex;align-items:center;justify-content:center;gap:3px;}
+  .avg-badge .rating-emoji{font-style:normal;font-size:22px;line-height:1;}
   .meta-row{display:flex;flex-direction:column;gap:3px;margin-top:6px;font-family:'Manrope',sans-serif;font-size:10.5px;color:var(--text-dim);}
   .note-tag{color:var(--text-dim);font-style:italic;}
   .fav-tag{color:var(--rose);}
@@ -221,7 +218,7 @@
   .profile-summary-title{font-family:'Manrope',sans-serif;font-size:11.5px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .profile-summary-sub{font-size:10px;color:var(--text-dim);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .profile-summary-score{font-family:'Manrope',sans-serif;font-size:11px;font-weight:700;color:var(--gold);white-space:nowrap;}
-  .profile-summary-note{font-size:10px;color:var(--text-dim);font-style:italic;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .profile-summary-note{font-size:10px;color:var(--text-dim);font-style:italic;margin-top:3px;white-space:pre-wrap;overflow:visible;text-overflow:clip;overflow-wrap:anywhere;word-break:normal;line-height:1.45;}
   .profile-match{font-family:'Manrope',sans-serif;font-size:11.5px;color:var(--rose);margin-bottom:8px;}
   .profile-fav-wrap{display:flex;flex-wrap:wrap;gap:6px;}
   .profile-fav-story{font-size:9.5px;color:var(--text-dim);margin-left:2px;}
@@ -235,11 +232,34 @@
   .emo-group{margin-bottom:9px;}
   .emo-group-label{font-family:'Manrope',sans-serif;font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--text-dim);opacity:.7;margin-bottom:5px;}
   .emo-chip{font-family:'Manrope',sans-serif;font-size:11px;padding:5px 11px;border-radius:20px;border:1px solid var(--line);background:var(--bg-1);color:var(--text-dim);cursor:pointer;}
-  .emo-chip.on{background:rgba(192,118,144,0.18);border-color:var(--rose);color:var(--rose);}
+  .emo-chip.on{background:rgba(205,168,106,.12);border-color:var(--gold);color:var(--text);}
   .del-row{margin-top:10px;text-align:right;}
   .del-btn{background:none;border:none;color:var(--rose);font-family:'Manrope',sans-serif;font-size:10.5px;cursor:pointer;text-decoration:underline;text-underline-offset:2px;}
 
   .empty-state{text-align:center;padding:36px 20px;color:var(--text-dim);font-style:italic;font-size:13.5px;}
+
+  /* Плашки оценок: убираем золотую заливку только у оценок, не у остальных элементов интерфейса */
+  .avg-badge{
+    background:transparent !important;
+    box-shadow:none !important;
+    color:var(--text) !important;
+  }
+  /* Личные оценки — нейтральный контур, без смайлика */
+  .avg-badge:not(.overall-rating-badge){
+    border:1px solid var(--line) !important;
+  }
+  /* Общая оценка — цветной контур по категории */
+  .avg-badge.overall-rating-badge{
+    border:1px solid var(--rating-color, var(--line)) !important;
+  }
+  .avg-badge:not(.overall-rating-badge) b{color:var(--text) !important;}
+  .avg-badge.overall-rating-badge b{color:var(--rating-color, var(--text)) !important;}
+  .overall-rating-badge .rating-emoji{font-size:1.45em;vertical-align:-.08em;}
+  .overall-status-icon{display:inline-flex;align-items:center;justify-content:center;width:18px;min-width:18px;margin-right:7px;vertical-align:middle;font-family:Arial,sans-serif;font-size:15px;line-height:1;font-weight:700;}
+  .overall-status-icon.done{color:#b69ae8;font-size:16px;}
+  .overall-status-icon.ongoing{color:var(--mint);font-size:16px;}
+  .overall-status-icon.paused{color:#9298A1;font-size:15px;}
+
 </style>
 </head>
 <script>
@@ -311,7 +331,6 @@
     </div>
   </div>
   <div id="lockedStatusRow" style="display:none;align-items:center;justify-content:space-between;gap:10px;font-family:'Manrope',sans-serif;font-size:11.5px;color:var(--text-dim);margin-bottom:14px;flex-wrap:wrap;"></div>
-  <div id="authorRatingsPanel" style="display:none;margin-bottom:16px;"></div>
   <div id="storyOpinionsPanel" style="display:none;margin-bottom:16px;"></div>
   <div id="profileFavoritesPanel" style="display:none;margin-bottom:16px;"></div>
   <div id="changeAvatarPanel" style="display:none;margin-bottom:14px;">
@@ -336,13 +355,14 @@
   <div class="eyebrow">Свод мнений</div>
   <h1 style="font-size:26px;">Общий рейтинг</h1>
   <p class="sub" id="ratingSub">Средний балл по всем, кто успел оценить.</p>
+  <div style="display:flex;justify-content:flex-end;margin:0 0 12px;">
+    <button class="filter-btn" id="adminSortRatingBtn" onclick="toggleAdminRatingSort()" aria-pressed="false">Оценка: по порядку</button>
+  </div>
 
   <div class="filters" style="margin-bottom:16px;">
     <button class="filter-btn" id="tabStories">Истории</button>
-    <button class="filter-btn" id="tabAuthors">Авторы</button>
   </div>
   <div id="adminList"></div>
-  <div id="authorDetailView" style="display:none;"></div>
   <div id="personStoryDetailView" style="display:none;"></div>
 </div>
 
@@ -359,6 +379,7 @@ function pluralRu(n, one, few, many){
 const CRITERIA = [
   {key:'idea', label:'Задумка'},
   {key:'execution', label:'Исполнение'},
+  {key:'heroine', label:'Главная героиня'},
   {key:'visual', label:'Визуал'},
   {key:'style', label:'Слог'},
   {key:'favorite', label:'Фаворит (осн. ЛЛ)'},
@@ -366,16 +387,7 @@ const CRITERIA = [
   {key:'overall', label:'Общее впечатление'}
 ];
 const EMOTION_TAGS = ['Восторг','Умиление','Веселье','Увлечённость','Предвкушение','Разъёб','Равнодушие','Удивление','Волнение','Неопределённость','Незавершённость','Скука','Разочарование','Грусть','Раздражение','Кринж','Стыд'];
-const EMOTION_TONES = {
-  good: new Set(['Восторг','Умиление','Веселье','Увлечённость','Предвкушение','Разъёб']),
-  neutral: new Set(['Равнодушие','Удивление','Волнение','Неопределённость','Незавершённость']),
-  bad: new Set(['Скука','Разочарование','Грусть','Раздражение','Кринж','Стыд'])
-};
-function emotionTone(tag){
-  if(EMOTION_TONES.good.has(tag)) return 'good';
-  if(EMOTION_TONES.neutral.has(tag)) return 'neutral';
-  return 'bad';
-}
+function emotionTone(tag){ return ''; }
 const OVERALL_SCALE = ['Ужасно','Плохо','Норм','Хорошо','Отлично'];
 
 function roundTo1(v){ return Math.round(v*10)/10; }
@@ -387,6 +399,19 @@ function overallWord(avg){
   if(avg < 4) return 'Норм';
   if(avg < 4.7) return 'Хорошо';
   return 'Отлично';
+}
+function overallColor(avg){
+  const word = overallWord(avg);
+  return ({'Ужасно':'#C65B68','Плохо':'#C96F49','Норм':'#C9AD55','Хорошо':'#A3C17A','Отлично':'#55A879'})[word] || 'var(--gold)';
+}
+function overallEmoji(avg){
+  if(avg===null || avg===undefined) return '';
+  const v=roundTo1(avg);
+  if(v<2) return v<1.3?'😭':v<1.7?'🤢':'😵‍💫';
+  if(v<3) return v<2.3?'😞':v<2.7?'😔':'😕';
+  if(v<4) return v<3.3?'😶':v<3.7?'😐':'🙂';
+  if(v<4.7) return v<4.2?'😌':v<4.4?'😃':'🤩';
+  return v<4.8?'🥰':v<5?'😍':'❤️‍🔥';
 }
 function formatScore(val){
   if(val===null || val===undefined) return '';
@@ -911,6 +936,9 @@ function markDirty(){
 }
 
 async function persist(){
+  // Если действие уже запрашивает немедленное сохранение, отменяем отложенное: иначе
+  // через 300 мс уйдёт второй такой же полный JSON на сервер.
+  if(persistTimer){ clearTimeout(persistTimer); persistTimer = null; }
   if(persistRunning){
     persistQueued = true;
     return;
@@ -977,9 +1005,16 @@ async function persistUnlocked(){
 function ensureRatings(personId, storyId){
   if(!data.ratings[personId]) data.ratings[personId] = {};
   if(!data.ratings[personId][storyId]) data.ratings[personId][storyId] = { read:false, inProgress:false, crit: blankCrit(), notes:'' };
+  const rating = data.ratings[personId][storyId];
+  if(!rating.crit) rating.crit = blankCrit();
+  // Add newly introduced criteria lazily, without changing existing ratings.
+  CRITERIA.forEach(c=>{ if(!rating.crit[c.key]) rating.crit[c.key] = {base:'',mod:''}; });
+  if(!Array.isArray(rating.crit.emotions)) rating.crit.emotions = [];
+  if(!rating.crit.favorite) rating.crit.favorite = {base:'',mod:'',name:'',names:[]};
+  if(!Array.isArray(rating.crit.favorite.names)) rating.crit.favorite.names = rating.crit.favorite.name ? [rating.crit.favorite.name] : [];
   const story = data.stories.find(x=>x.id===storyId);
-  if(story) ensureExtraFavoriteRatings(data.ratings[personId][storyId], story);
-  return data.ratings[personId][storyId];
+  if(story) ensureExtraFavoriteRatings(rating, story);
+  return rating;
 }
 function ensureAuthorRating(personId, authorName){
   if(!data.ratings[personId]) data.ratings[personId] = {};
@@ -1046,7 +1081,7 @@ function buildCompareRows(storyId){
           <span class="compare-read ${read?'yes':''}">${read?'прочитано':'не читала'}</span>
           ${favNames.length ? `<span class="compare-fav">★ ${escapeHtml(favNames.join(', '))}</span>` : ''}
         </div>
-        ${avg!==null ? `<div class="avg-badge" data-rating-summary style="padding:3px 8px;"><b>${formatScore(avg)}</b><span>${overallWord(avg)}</span></div>` : `<span class="compare-none">без оценки</span>`}
+        ${avg!==null ? `<div class="avg-badge" data-rating-summary style="padding:3px 8px"><b>${formatScore(avg)}</b><span>${overallWord(avg)}</span></div>` : `<span class="compare-none">без оценки</span>`}
       </div>`;
   }).join('');
 }
@@ -1738,7 +1773,7 @@ function renderList(){
     const read = r ? r.read : false;
     const inProgress = r ? r.inProgress : false;
     const avg = currentPersonId ? avgOf(currentPersonId, s.id) : null;
-    const statusColor = s.status==='done' ? 'var(--gold)' : 'var(--mint)';
+    const statusColor = s.status==='done' ? 'var(--gold)' : (s.status==='ongoing' ? 'var(--mint)' : 'var(--text-dim)');
 
     const extraFavCriteria = extraFavoriteCriteriaOf(s).map(c=>({key:c.id,label:c.label,extraFavorite:true}));
     const allCriteria = [];
@@ -2085,7 +2120,7 @@ function renderAuthorRatingsPanel(){
     </div>`;
 }
 
-let storyOpinionsCollapsed = localStorage.getItem('storyOpinionsCollapsed') !== 'false';
+let storyOpinionsCollapsed = localStorage.getItem('storyOpinionsCollapsed') === 'true'; // По умолчанию мнения раскрыты
 let profileFavoritesCollapsed = localStorage.getItem('profileFavoritesCollapsed') !== 'false';
 
 function toggleStoryOpinionsPanel(){
@@ -2100,7 +2135,7 @@ function toggleProfileFavoritesPanel(){
 }
 function renderStoryOpinionsPanel(){
   const box=document.getElementById('storyOpinionsPanel');
-  if(!box || !currentPersonId || isViewingOwnProfile()){ if(box){box.style.display='none';box.innerHTML='';} return; }
+  if(!box || !currentPersonId || !isViewingOtherProfile()){ if(box){box.style.display='none';box.innerHTML='';} return; }
   const rows=[];
   data.stories.forEach(s=>{
     const r=data.ratings[currentPersonId] && data.ratings[currentPersonId][s.id];
@@ -2137,6 +2172,12 @@ function renderProfileFavoritesPanel(){
   const viewerId=currentViewerId();
   const match=(viewerId && viewerId!==currentPersonId) ? favoriteMatchPercent(viewerId,currentPersonId) : null;
   const viewer=data.people.find(p=>p.id===viewerId);
+  const normFav=n=>String(n||'').toLocaleLowerCase('ru-RU').replace(/ё/g,'е').trim();
+  const viewerFavoritesByStory={};
+  if(viewerId && viewerId!==currentPersonId) data.stories.forEach(st=>{
+    const vr=data.ratings[viewerId] && data.ratings[viewerId][st.id];
+    viewerFavoritesByStory[st.id]=new Set(favoriteNamesOf(vr,st).map(normFav).filter(Boolean));
+  });
   box.style.display='block';
   box.innerHTML=`
     <div class="profile-panel">
@@ -2145,9 +2186,12 @@ function renderProfileFavoritesPanel(){
       </button>
       <div class="profile-panel-body" style="display:${profileFavoritesCollapsed?'none':'block'};">
         ${match!==null?`<div class="profile-match">♥ ${match}% совпадения по фаворитам${viewer?` с ${escapeHtml(viewer.name)}`:''}</div>`:''}
-        ${favs.length ? `<div class="profile-fav-wrap">${favs.map(f=>`<div class="profile-summary-row" style="width:100%;box-sizing:border-box;">
-          ${favBadgeHtml(f.story,f.name)}<span class="profile-fav-story">— ${escapeHtml(f.storyTitle)}</span>
-        </div>`).join('')}</div>` : `<div class="compare-empty">Фаворитов пока нет.</div>`}
+        ${favs.length ? `<div class="profile-fav-wrap">${favs.map(f=>{
+          const isMatch=!!(viewerId && viewerId!==currentPersonId && viewerFavoritesByStory[f.story.id] && viewerFavoritesByStory[f.story.id].has(normFav(f.name)));
+          return `<div class="profile-summary-row" style="width:100%;box-sizing:border-box;">
+            ${favBadgeHtml(f.story,f.name)}<span class="profile-fav-story">— ${escapeHtml(f.storyTitle)}</span>${isMatch?`<span title="Ваши фавориты совпали" aria-label="Ваши фавориты совпали" style="margin-left:auto;color:var(--mint);font-weight:700;font-size:15px;">✓</span>`:''}
+          </div>`;
+        }).join('')}</div>` : `<div class="compare-empty">Фаворитов пока нет.</div>`}
       </div>
     </div>`;
 }
@@ -2156,7 +2200,6 @@ function render(){
   renderPeople();
   renderAdminPeoplePanel();
   renderStats();
-  renderAuthorRatingsPanel();
   renderStoryOpinionsPanel();
   renderProfileFavoritesPanel();
   renderFilters();
@@ -2288,21 +2331,46 @@ let ratingTab = 'stories';
 let openAuthorName = null;
 let authorRatingsCollapsed = localStorage.getItem('authorRatingsCollapsed') !== 'false';
 let openRatingStoryId = null;
+let adminRatingSortMode = 'original';
+
+function toggleAdminRatingSort(){
+  adminRatingSortMode = adminRatingSortMode === 'original' ? 'desc' : adminRatingSortMode === 'desc' ? 'asc' : 'original';
+  renderAdmin();
+}
+
+function storyStatusIcon(status){
+  if(status==='done') return '<span class="overall-status-icon done" title="Завершена" aria-label="Завершена">✦</span>';
+  if(status==='ongoing') return '<span class="overall-status-icon ongoing" title="Выходит" aria-label="Выходит">✒</span>';
+  return '<span class="overall-status-icon paused" title="Приостановлена" aria-label="Приостановлена">Ⅱ</span>';
+}
 
 function renderAdmin(){
   document.getElementById('personStoryDetailView').style.display='none';
-  if(ratingTab==='authors'){ renderAuthorsList(); return; }
-  document.getElementById('authorDetailView').style.display='none';
   document.getElementById('adminList').style.display='block';
-  document.getElementById('ratingSub').textContent = 'Открой историю — увидишь итог по каждому: балл, фаворит, заметка. Клик по имени — полная разбивка по критериям.';
+  const sortBtn = document.getElementById('adminSortRatingBtn');
+  if(sortBtn){
+    sortBtn.textContent = adminRatingSortMode === 'desc' ? 'Оценка: от высокой к низкой ↓' : adminRatingSortMode === 'asc' ? 'Оценка: от низкой к высокой ↑' : 'Оценка: по исходному порядку';
+    sortBtn.classList.toggle('active', adminRatingSortMode !== 'original');
+    sortBtn.setAttribute('aria-pressed', String(adminRatingSortMode !== 'original'));
+    sortBtn.style.display = ratingTab==='stories' ? '' : 'none';
+  }
+  document.getElementById('ratingSub').textContent = 'Открой историю — увидишь оценки, фаворитов и заметки. Клик по имени — подробная разбивка по критериям.';
   const list = document.getElementById('adminList');
   const totalPeople = data.people.length;
   if(totalPeople===0){
     list.innerHTML = `<div class="empty-state">Пока никто не добавил себя и не оценил ни одной истории.</div>`;
     return;
   }
-  const rows = data.stories.map(s=>({ s, agg: aggregateAvg(s.id) }));
-  // Сохраняем исходный порядок историй — общий рейтинг не сортируем по оценке.
+  const rows = data.stories.map((s, originalIndex)=>({ s, agg: aggregateAvg(s.id), originalIndex }));
+  if(adminRatingSortMode !== 'original'){
+    rows.sort((a,b)=>{
+      if(a.agg===null && b.agg===null) return a.originalIndex-b.originalIndex;
+      if(a.agg===null) return 1;
+      if(b.agg===null) return -1;
+      const difference = adminRatingSortMode === 'desc' ? b.agg.avg-a.agg.avg : a.agg.avg-b.agg.avg;
+      return difference || a.originalIndex-b.originalIndex;
+    });
+  }
   list.innerHTML = rows.map((row, i)=>{
     const { s, agg } = row;
     const isOpen = openRatingStoryId===s.id;
@@ -2325,20 +2393,20 @@ function renderAdmin(){
             ${favNames.length ? favNames.map(name=>favBadgeHtml(s, name)).join('') : ''}
             ${r && r.notes ? `<div class="note-tag">${escapeHtml(r.notes)}</div>` : ''}
           </div>
-          ${pAvg!==null ? `<div class="avg-badge" style="padding:3px 8px;"><b>${formatScore(pAvg)}</b><span>${overallWord(pAvg)}</span></div>` : ''}
+          ${pAvg!==null ? `<div class="avg-badge" style="padding:3px 8px"><b>${formatScore(pAvg)}</b><span>${overallWord(pAvg)}</span></div>` : ''}
         </div>`;
     }).join('') || `<div class="compare-empty">Пока никто не оставил мнение об этой истории</div>`;
     return `
       <div class="story ${isOpen?'open':''}">
-        <div class="story-head" style="--status-color:${s.status==='done'?'var(--gold)':'var(--mint)'};cursor:pointer;" onclick="toggleRatingStory('${s.id}')">
+        <div class="story-head" style="--status-color:${agg ? overallColor(agg.avg) : (s.status==='done'?'var(--gold)':'var(--mint)')};cursor:pointer;" onclick="toggleRatingStory('${s.id}')">
           <div style="font-family:'Marcellus',serif;color:var(--text-dim);font-size:15px;width:22px;flex:0 0 auto;text-align:center;">${i+1}</div>
           <div class="story-main">
             <div class="story-top">
               <div>
-                <div class="story-title">${escapeHtml(s.title)}</div>
+                <div class="story-title">${storyStatusIcon(s.status)}${escapeHtml(s.title)}</div>
                 ${s.author ? `<div class="story-author">${escapeHtml(s.author)}</div>` : ''}
               </div>
-              ${agg ? `<div class="avg-badge"><b>${formatScore(agg.avg)}</b><span>${overallWord(agg.avg)}</span></div>` : ''}
+              ${agg ? `<div class="avg-badge overall-rating-badge" style="--rating-color:${overallColor(agg.avg)}"><b>${formatScore(agg.avg)}</b><span><i class="rating-emoji">${overallEmoji(agg.avg)}</i> ${overallWord(agg.avg)}</span></div>` : ''}
             </div>
             <div class="meta-row">
               ${agg ? `<span>оценили: ${agg.count} из ${totalPeople}</span>` : `<span>пока никто не оценил</span>`}
@@ -2383,7 +2451,6 @@ function openPersonStoryDetail(personId, storyId){
   savedListScroll = window.scrollY;
   const r = data.ratings[personId] && data.ratings[personId][storyId];
   document.getElementById('adminList').style.display='none';
-  document.getElementById('authorDetailView').style.display='none';
   const box = document.getElementById('personStoryDetailView');
   box.style.display='block';
 
@@ -2440,8 +2507,9 @@ function authorAggregate(authorName){
   return { avg: vals.reduce((a,b)=>a+b,0)/vals.length, count: vals.length };
 }
 function renderAuthorsList(){
-  document.getElementById('authorDetailView').style.display='none';
   document.getElementById('adminList').style.display='block';
+  const sortBtn = document.getElementById('adminSortRatingBtn');
+  if(sortBtn) sortBtn.style.display='none';
   document.getElementById('ratingSub').textContent = 'Средний балл по автору — по всем, кто оставил мнение. Авторы без оценок — внизу списка.';
   const list = document.getElementById('adminList');
   const totalPeople = data.people.length;
@@ -2466,7 +2534,7 @@ function renderAuthorsList(){
           <div class="story-main">
             <div class="story-top">
               <div><div class="story-title">${escapeHtml(name)}</div></div>
-              ${agg ? `<div class="avg-badge"><b>${formatScore(agg.avg)}</b><span>${overallWord(agg.avg)}</span></div>` : ''}
+              ${agg ? `<div class="avg-badge overall-rating-badge" style="--rating-color:${overallColor(agg.avg)}"><b>${formatScore(agg.avg)}</b><span><i class="rating-emoji">${overallEmoji(agg.avg)}</i> ${overallWord(agg.avg)}</span></div>` : ''}
             </div>
             <div class="meta-row">
               ${agg ? `<span>оценили: ${agg.count} из ${totalPeople}</span>` : `<span>пока никто не оценил</span>`}
@@ -2510,10 +2578,10 @@ function openAuthorDetail(name){
   window.scrollTo({top:0});
 }
 function switchTab(tab){
+  tab = 'stories';
   ratingTab = tab;
   openAuthorName = null;
   document.getElementById('tabStories').classList.toggle('active', tab==='stories');
-  document.getElementById('tabAuthors').classList.toggle('active', tab==='authors');
   renderAdmin();
 }
 function openAdmin(){
@@ -2534,7 +2602,6 @@ function closeAdmin(){
 document.getElementById('adminTrigger').addEventListener('click', openAdmin);
 document.getElementById('goToShelfBtn').addEventListener('click', closeAdmin);
 document.getElementById('tabStories').addEventListener('click', ()=> switchTab('stories'));
-document.getElementById('tabAuthors').addEventListener('click', ()=> switchTab('authors'));
 
 document.getElementById('retrySaveBtn').addEventListener('click', persist);
 
