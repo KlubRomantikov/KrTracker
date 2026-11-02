@@ -1592,8 +1592,9 @@ async function toggleFavName(storyId, val){
   } else if(current.length < limit){
     setFavoriteNames(r, [...current, val]);
   } else {
-    // Ничего не меняем: пользователь уже выбрал допустимое количество.
-    return;
+    // Если все места заняты, заменяем последнего выбранного фаворита.
+    // При одном месте это позволяет сразу переключиться на другого персонажа.
+    setFavoriteNames(r, [...current.slice(0, limit - 1), val]);
   }
   renderList();
   schedulePersist();
